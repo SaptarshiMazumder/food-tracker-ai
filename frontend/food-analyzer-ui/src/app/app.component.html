@@ -1,0 +1,45 @@
+<div class="app-container">
+  <header class="header">
+    <h1>Food Analyzer</h1>
+    <nav class="navigation">
+      <button
+        class="nav-tab"
+        [class.active]="activeTab === 'analyzer'"
+        (click)="setActiveTab('analyzer')"
+      >
+        Analyzer
+      </button>
+      <button
+        class="nav-tab"
+        [class.active]="activeTab === 'recipes'"
+        (click)="setActiveTab('recipes')"
+      >
+        Recipes
+      </button>
+      <button
+        class="nav-tab"
+        [class.active]="activeTab === 'log'"
+        (click)="setActiveTab('log')"
+      >
+        📊 Log
+      </button>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <!-- Food Analyzer Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'analyzer'">
+      <app-upload-analyze></app-upload-analyze>
+    </div>
+
+    <!-- Recipe Finder Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'recipes'">
+      <app-rag-query></app-rag-query>
+    </div>
+
+    <!-- Meal Log Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'log'">
+      <app-meal-log></app-meal-log>
+    </div>
+  </main>
+</div>

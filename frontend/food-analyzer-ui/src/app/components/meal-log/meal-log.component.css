@@ -1,0 +1,619 @@
+.meal-log-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header styles (matching the main app header) */
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.navigation {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #666;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.nav-link.active {
+  background: #007bff;
+  color: white;
+}
+
+.meal-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.meal-log-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.header-controls {
+  display: flex;
+  gap: 10px;
+}
+
+/* Weekly Calendar */
+.weekly-calendar {
+  margin-bottom: 25px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.btn-nav {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-nav:hover {
+  background: #0056b3;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: #e9ecef;
+}
+
+.calendar-day {
+  background: white;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.calendar-day:hover {
+  background: #f8f9fa;
+}
+
+.calendar-day.today {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+
+.calendar-day.selected {
+  background: #007bff;
+  color: white;
+}
+
+.calendar-day.selected .day-name,
+.calendar-day.selected .day-date {
+  color: white;
+}
+
+.day-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.day-date {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.day-totals {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.total-kcal {
+  font-weight: 600;
+  color: #e91e63;
+}
+
+.total-protein {
+  font-weight: 600;
+  color: #4caf50;
+}
+
+.calendar-day.selected .total-kcal,
+.calendar-day.selected .total-protein {
+  color: white;
+}
+
+/* Date Selector */
+.date-selector {
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-selector label {
+  font-weight: 500;
+  color: #555;
+}
+
+.date-selector select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+/* Search Section */
+.search-section {
+  margin-bottom: 25px;
+}
+
+.search-input {
+  display: flex;
+  gap: 8px;
+  max-width: 500px;
+}
+
+.search-input input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.search-input input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-search {
+  background: #28a745;
+  color: white;
+  padding: 10px 12px;
+}
+
+.btn-search:hover {
+  background: #1e7e34;
+}
+
+.btn-clear {
+  background: #6c757d;
+  color: white;
+  padding: 10px 12px;
+}
+
+.btn-clear:hover {
+  background: #545b62;
+}
+
+.btn-add {
+  background: #28a745;
+  color: white;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.btn-add:hover {
+  background: #1e7e34;
+}
+
+.btn-remove {
+  background: #dc3545;
+  color: white;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.btn-remove:hover {
+  background: #c82333;
+}
+
+/* Search Results */
+.search-results {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.search-results h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.meal-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+/* Daily Log */
+.daily-log {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.daily-header {
+  background: #f8f9fa;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.daily-header h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.daily-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.total-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.total-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.total-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Meals List */
+.meals-list {
+  padding: 20px;
+}
+
+.meal-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.meal-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meal-card.search-result {
+  background: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.meal-basic-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meal-basic-info h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.meal-quick-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.meal-quick-stats .kcal {
+  color: #e91e63;
+  font-weight: 600;
+}
+
+.meal-quick-stats .protein {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.meal-quick-stats .time {
+  color: #007bff;
+  font-weight: 500;
+}
+
+.meal-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.service-icon, .mode-icon {
+  font-size: 14px;
+}
+
+.expand-icon {
+  font-size: 12px;
+  color: #999;
+  transition: transform 0.2s ease;
+}
+
+.meal-header:hover .expand-icon {
+  color: #007bff;
+}
+
+/* Meal Details */
+.meal-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.meal-nutrition {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nutrition-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.nutrition-item .label {
+  font-size: 10px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.nutrition-item .value {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Ingredients */
+.meal-ingredients {
+  margin-bottom: 15px;
+}
+
+.ingredients-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ingredients-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ingredient-chip {
+  background: #e9ecef;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Notes */
+.meal-notes {
+  margin-bottom: 15px;
+}
+
+.notes-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.notes-text {
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Meal Actions */
+.meal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* No Meals */
+.no-meals {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.no-meals p {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.no-meals p:last-child {
+  font-size: 14px;
+  color: #999;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .meal-log-container {
+    padding: 10px;
+  }
+  
+  .meal-log-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .calendar-day {
+    padding: 8px 4px;
+    min-height: 70px;
+  }
+  
+  .day-name {
+    font-size: 10px;
+  }
+  
+  .day-date {
+    font-size: 14px;
+  }
+  
+  .day-totals {
+    font-size: 9px;
+  }
+  
+  .meal-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .daily-totals {
+    justify-content: center;
+  }
+  
+  .meal-nutrition {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .meal-quick-stats {
+    gap: 8px;
+    font-size: 11px;
+  }
+  
+  .meal-basic-info h4 {
+    font-size: 15px;
+  }
+  
+  .date-selector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .date-selector select {
+    width: 100%;
+    min-width: auto;
+  }
+}

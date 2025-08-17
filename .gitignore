@@ -1,0 +1,7 @@
+uploads/
+frontend/food-analyzer-ui/node_modules
+.env
+*.pyc
+node_modules/
+images/
+artifacts/

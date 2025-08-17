@@ -1,0 +1,254 @@
+<div class="meal-log-container">
+  <header class="meal-log-header">
+    <h2>📊 Meal Log</h2>
+    <div class="header-controls">
+      <button class="btn btn-primary" (click)="loadTodaysMeals()">
+        📅 Today
+      </button>
+    </div>
+  </header>
+
+  <!-- Weekly Calendar -->
+  <div class="weekly-calendar">
+    <div class="calendar-header">
+      <button class="btn btn-nav" (click)="previousWeek()">‹</button>
+      <h3>
+        {{
+          currentWeekStart.toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric"
+          })
+        }}
+      </h3>
+      <button class="btn btn-nav" (click)="nextWeek()">›</button>
+    </div>
+
+    <div class="calendar-grid">
+      <div
+        class="calendar-day"
+        *ngFor="let day of getWeekDays()"
+        [class.today]="day.isToday"
+        [class.selected]="day.isSelected"
+        (click)="selectDate(day.dateString)"
+      >
+        <div class="day-name">{{ day.dayName }}</div>
+        <div class="day-date">{{ day.date.getDate() }}</div>
+        <div class="day-totals" *ngIf="getDayTotals(day.dateString).kcal > 0">
+          <div class="total-kcal">
+            {{ getDayTotals(day.dateString).kcal | number : "1.0-0" }} cal
+          </div>
+          <div class="total-protein">
+            {{ getDayTotals(day.dateString).protein | number : "1.0-0" }}p
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date Selector (keep for quick access to specific dates) -->
+  <div class="date-selector">
+    <label for="dateSelect">Quick Select:</label>
+    <select
+      id="dateSelect"
+      [(ngModel)]="selectedDate"
+      (change)="onDateChange(selectedDate)"
+    >
+      <option *ngFor="let date of allDates" [value]="date">
+        {{ formatDate(date) }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="search-input">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Search meals by dish or ingredients..."
+        (keyup.enter)="onSearch()"
+      />
+      <button class="btn btn-search" (click)="onSearch()">🔍</button>
+      <button
+        class="btn btn-clear"
+        (click)="onClearSearch()"
+        *ngIf="searchQuery"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Results -->
+  <div class="search-results" *ngIf="isSearching && searchResults.length > 0">
+    <h3>🔍 Search Results</h3>
+    <div class="meal-cards">
+      <div class="meal-card search-result" *ngFor="let meal of searchResults">
+        <div class="meal-header">
+          <h4>{{ meal.dish }}</h4>
+          <div class="meal-meta">
+            <span class="service-icon">{{
+              getServiceIcon(meal.service_used)
+            }}</span>
+            <span class="mode-icon">{{
+              getAnalysisModeIcon(meal.analysis_mode)
+            }}</span>
+            <span class="date">{{ formatDate(meal.date) }}</span>
+          </div>
+        </div>
+        <div class="meal-nutrition">
+          <span class="kcal"
+            >{{ meal.total_kcal | number : "1.0-0" }} kcal</span
+          >
+          <span class="grams">{{ meal.total_grams | number : "1.0-0" }}g</span>
+        </div>
+        <div class="meal-actions">
+          <button class="btn btn-add" (click)="onAddMealToToday(meal)">
+            ➕ Add to Today
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Meal Log -->
+  <div class="daily-log" *ngIf="todaysMealLog">
+    <div class="daily-header">
+      <h3>📅 {{ formatDate(todaysMealLog.date) }}</h3>
+      <div class="daily-totals" *ngIf="todaysMealLog.meals.length > 0">
+        <div class="total-item">
+          <span class="total-label">Total kcal:</span>
+          <span class="total-value">{{
+            todaysMealLog.dailyTotals.total_kcal | number : "1.0-0"
+          }}</span>
+        </div>
+        <div class="total-item">
+          <span class="total-label">Protein:</span>
+          <span class="total-value"
+            >{{
+              todaysMealLog.dailyTotals.total_protein_g | number : "1.1-1"
+            }}g</span
+          >
+        </div>
+        <div class="total-item">
+          <span class="total-label">Carbs:</span>
+          <span class="total-value"
+            >{{
+              todaysMealLog.dailyTotals.total_carbs_g | number : "1.1-1"
+            }}g</span
+          >
+        </div>
+        <div class="total-item">
+          <span class="total-label">Fat:</span>
+          <span class="total-value"
+            >{{
+              todaysMealLog.dailyTotals.total_fat_g | number : "1.1-1"
+            }}g</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Meals List -->
+    <div
+      class="meals-list"
+      *ngIf="todaysMealLog.meals.length > 0; else noMeals"
+    >
+      <div class="meal-card" *ngFor="let meal of todaysMealLog.meals">
+        <div class="meal-header" (click)="toggleMealExpansion(meal.id)">
+          <div class="meal-basic-info">
+            <h4>{{ meal.dish }}</h4>
+            <div class="meal-quick-stats">
+              <span class="kcal"
+                >{{ meal.total_kcal | number : "1.0-0" }} cal</span
+              >
+              <span class="protein"
+                >{{ meal.total_protein_g | number : "1.0-0" }}p</span
+              >
+              <span class="time">{{ formatTime(meal.timestamp) }}</span>
+            </div>
+          </div>
+          <div class="meal-meta">
+            <span class="service-icon">{{
+              getServiceIcon(meal.service_used)
+            }}</span>
+            <span class="mode-icon">{{
+              getAnalysisModeIcon(meal.analysis_mode)
+            }}</span>
+            <span class="expand-icon">{{
+              isMealExpanded(meal.id) ? "▼" : "▶"
+            }}</span>
+          </div>
+        </div>
+
+        <div class="meal-details" *ngIf="isMealExpanded(meal.id)">
+          <div class="meal-nutrition">
+            <div class="nutrition-item">
+              <span class="label">kcal:</span>
+              <span class="value">{{
+                meal.total_kcal | number : "1.0-0"
+              }}</span>
+            </div>
+            <div class="nutrition-item">
+              <span class="label">protein:</span>
+              <span class="value"
+                >{{ meal.total_protein_g | number : "1.1-1" }}g</span
+              >
+            </div>
+            <div class="nutrition-item">
+              <span class="label">carbs:</span>
+              <span class="value"
+                >{{ meal.total_carbs_g | number : "1.1-1" }}g</span
+              >
+            </div>
+            <div class="nutrition-item">
+              <span class="label">fat:</span>
+              <span class="value"
+                >{{ meal.total_fat_g | number : "1.1-1" }}g</span
+              >
+            </div>
+            <div class="nutrition-item">
+              <span class="label">total:</span>
+              <span class="value"
+                >{{ meal.total_grams | number : "1.0-0" }}g</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="meal-ingredients"
+            *ngIf="meal.ingredients_detected.length > 0"
+          >
+            <div class="ingredients-label">Ingredients:</div>
+            <div class="ingredients-list">
+              <span
+                class="ingredient-chip"
+                *ngFor="let ingredient of meal.ingredients_detected"
+              >
+                {{ ingredient }}
+              </span>
+            </div>
+          </div>
+
+          <div class="meal-notes" *ngIf="meal.notes">
+            <div class="notes-label">Notes:</div>
+            <div class="notes-text">{{ meal.notes }}</div>
+          </div>
+        </div>
+
+        <div class="meal-actions" *ngIf="isMealExpanded(meal.id)">
+          <button class="btn btn-remove" (click)="onRemoveMeal(meal.id)">
+            🗑️ Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noMeals>
+      <div class="no-meals">
+        <p>No meals logged for {{ formatDate(todaysMealLog.date) }}</p>
+        <p>Analyze some food to start logging your meals!</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

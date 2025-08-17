@@ -1,0 +1,30 @@
+<div class="rag-query-container">
+  <div class="description">
+    <p>
+      Enter ingredients you have available and find matching recipes from our
+      database.
+    </p>
+  </div>
+
+  <app-rag-query-input
+    (querySubmit)="onQuerySubmit($event)"
+  ></app-rag-query-input>
+
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Searching for recipes...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+  </div>
+
+  <app-rag-query-results
+    *ngIf="queryResults && !isLoading"
+    [results]="queryResults"
+    [mode]="currentMode"
+    (loadDetails)="onLoadDetails($event)"
+    #resultsComponent
+  >
+  </app-rag-query-results>
+</div>

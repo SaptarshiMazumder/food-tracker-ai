@@ -1,0 +1,62 @@
+/* layout row */
+.row {
+  margin: 12px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+/* file picker */
+.file input[type="file"] { display: none; }
+.file span {
+  display: inline-block;
+  padding: 10px 12px;
+  background: #f4f6f8;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #e8eaee;
+}
+
+/* buttons */
+.btn {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  flex: 0 0 auto;                                  /* don't stretch into input */
+  white-space: nowrap;                              /* keep 'Analyze' on one line */
+  height: 38px;
+  line-height: 22px;
+}
+.btn.ghost { background: transparent; }
+.btn[disabled] { opacity: 0.6; cursor: default; }
+
+/* preview grid */
+.preview .thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.preview img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+.caption { font-size: 12px; color: #666; margin: 6px 0; }
+
+/* ---------- responsive fixes ---------- */
+
+/* phones <= 400px: stack input + buttons to prevent any overlap */
+@media (max-width: 400px) {
+  .row { align-items: stretch; gap: 10px; }
+  .file span { width: 100%; text-align: center; }
+  .btn { flex-basis: 100%; width: 100%; }          /* Analyze and Clear become full-width rows */
+}
+
+/* small phones 401–480px: input grows, buttons keep own row width */
+@media (min-width: 401px) and (max-width: 480px) {
+  .btn   { flex: 0 0 120px; }                      /* fixed button width, no overlap */
+}

@@ -1,0 +1,218 @@
+<div class="results-container">
+  <div class="results-header">
+    <h2>
+      Found {{ results.hits.length }} Recipe{{
+        results.hits.length !== 1 ? "s" : ""
+      }}
+    </h2>
+    <p class="query-info">
+      Based on: <strong>{{ results.query_ingredients.join(", ") }}</strong>
+    </p>
+  </div>
+
+  <div class="results-grid">
+    <div *ngFor="let hit of results.hits; let i = index" class="recipe-card">
+      <!-- Collapsed View (Default) -->
+      <div
+        class="card-collapsed"
+        (click)="onCardClick(i, hit.dish_name, hit.ingredients)"
+      >
+        <div class="card-image">
+          <img
+            [src]="
+              hit.image_url ||
+              'https://d33wubrfki0l68.cloudfront.net/2b3f027405ee07fb69921b5de0710bb844882662/e937b/img/fallback.png'
+            "
+            [alt]="hit.dish_name"
+            (error)="onImageError($event)"
+          />
+        </div>
+        <div class="card-info">
+          <h3 class="dish-name">{{ hit.dish_name }}</h3>
+          <div class="score-badge" [ngClass]="getScoreColor(hit.score)">
+            {{ getScorePercentage(hit.score) }}% Match
+          </div>
+        </div>
+        <div class="expand-icon">
+          <i
+            class="fas"
+            [ngClass]="isCardCollapsed(i) ? 'fa-chevron-down' : 'fa-chevron-up'"
+          ></i>
+        </div>
+      </div>
+
+      <!-- Expanded View -->
+      <div class="card-expanded" *ngIf="!isCardCollapsed(i)">
+        <div class="expanded-content">
+          <!-- Ingredients -->
+          <div
+            class="content-section"
+            *ngIf="hit.ingredients && hit.ingredients.length > 0"
+          >
+            <h4>Ingredients</h4>
+            <div class="ingredients-list">
+              <span
+                *ngFor="let ingredient of hit.ingredients"
+                class="ingredient-tag"
+              >
+                {{ ingredient }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Cooking Method -->
+          <div class="content-section" *ngIf="hit.cooking_method">
+            <h4>Cooking Method</h4>
+            <p>{{ hit.cooking_method }}</p>
+          </div>
+
+          <!-- Cuisine -->
+          <div class="content-section" *ngIf="hit.cuisine">
+            <h4>Cuisine</h4>
+            <p>{{ hit.cuisine }}</p>
+          </div>
+
+          <!-- Directions -->
+          <div
+            class="content-section"
+            *ngIf="hit.directions && hit.directions.length > 0"
+          >
+            <h4>Directions</h4>
+            <ol class="directions-list">
+              <li *ngFor="let step of hit.directions">{{ step }}</li>
+            </ol>
+          </div>
+
+          <!-- Source -->
+          <div class="content-section" *ngIf="hit.source_datasets.length > 0">
+            <h4>Source</h4>
+            <div class="source-tags">
+              <span
+                *ngFor="let source of hit.source_datasets"
+                class="source-tag"
+              >
+                {{ source }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Web Sources -->
+          <div
+            class="content-section"
+            *ngIf="
+              getSourcesForDish(hit.dish_name).length > 0 ||
+              (mode === 'strict' && isDetailsLoading(i))
+            "
+          >
+            <h4>Recipe Sources from Web</h4>
+
+            <!-- Loading indicator for strict mode -->
+            <div
+              *ngIf="mode === 'strict' && isDetailsLoading(i)"
+              class="loading-sources"
+            >
+              <div class="spinner"></div>
+              <p>Loading recipe details...</p>
+            </div>
+            
+            <!-- No sources found message -->
+            <div
+              *ngIf="mode === 'strict' && !isDetailsLoading(i) && getSourcesForDish(hit.dish_name).length === 0"
+              class="no-sources"
+            >
+              <p>No additional recipe sources found online.</p>
+            </div>
+            
+            <div class="web-sources">
+              <div
+                *ngFor="let source of getSourcesForDish(hit.dish_name)"
+                class="web-source"
+              >
+                <a
+                  [href]="source.link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="source-link"
+                >
+                  <div class="source-title">{{ source.title }}</div>
+                  <div class="source-snippet">{{ source.snippet }}</div>
+                  <div class="source-domain">{{ source.displayLink }}</div>
+                </a>
+
+                <!-- Extracted Directions -->
+                <div
+                  class="extracted-directions"
+                  *ngIf="source.directions && source.directions.length > 0"
+                >
+                  <div class="directions-header">
+                    <h5>Extracted Directions</h5>
+                    <span
+                      class="extraction-badge"
+                      *ngIf="source.extraction_method"
+                    >
+                      {{
+                        source.extraction_method === "llm"
+                          ? "AI Extracted"
+                          : "Pattern Matched"
+                      }}
+                    </span>
+                  </div>
+                  <ol class="directions-list">
+                    <li *ngFor="let step of source.directions">{{ step }}</li>
+                  </ol>
+                </div>
+
+                <!-- Recipe Info -->
+                <div
+                  class="recipe-meta"
+                  *ngIf="hasRecipeInfo(source.recipe_info)"
+                >
+                  <h5>Recipe Details</h5>
+                  <div class="meta-grid">
+                    <span *ngIf="source.recipe_info?.title" class="meta-item">
+                      <strong>Title:</strong> {{ source.recipe_info?.title }}
+                    </span>
+                    <span
+                      *ngIf="source.recipe_info?.cook_time"
+                      class="meta-item"
+                    >
+                      <strong>Cook Time:</strong>
+                      {{ source.recipe_info?.cook_time }}
+                    </span>
+                    <span
+                      *ngIf="source.recipe_info?.prep_time"
+                      class="meta-item"
+                    >
+                      <strong>Prep Time:</strong>
+                      {{ source.recipe_info?.prep_time }}
+                    </span>
+                    <span
+                      *ngIf="source.recipe_info?.total_time"
+                      class="meta-item"
+                    >
+                      <strong>Total Time:</strong>
+                      {{ source.recipe_info?.total_time }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Content Preview -->
+                <div class="content-preview" *ngIf="source.content_preview">
+                  <h5>Content Preview</h5>
+                  <p>{{ source.content_preview }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-results" *ngIf="results.hits.length === 0">
+    <p>
+      No recipes found for the given ingredients. Try adding more ingredients or
+      using different ones.
+    </p>
+  </div>
+</div>

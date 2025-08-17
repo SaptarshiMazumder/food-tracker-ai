@@ -1,0 +1,60 @@
+<div [formGroup]="form">
+  <div formArrayName="rows">
+    <div class="ing-card" *ngFor="let ctrl of rowsFA.controls; let i = index">
+      <div class="title">
+        <div class="name">{{ items[i]?.name }}</div>
+        <div class="note" *ngIf="items[i]?.note">{{ items[i]?.note }}</div>
+      </div>
+
+      <!-- compact controls; flex-wrap prevents overlap on narrow screens -->
+      <div class="grams-inline">
+        <label class="label" [for]="'g' + i">Grams (g)</label>
+
+        <input
+          type="range"
+          class="range"
+          [id]="'g' + i"
+          [formControlName]="i"
+          [min]="items[i]?.min"
+          [max]="items[i]?.max"
+          [step]="items[i]?.step"
+          aria-label="Grams in grams"
+        />
+
+        <input
+          type="number"
+          class="num"
+          [value]="rowsFA.at(i).value ?? 0"
+          (input)="onNumInput(i, $event)"
+          [min]="items[i]?.min"
+          [max]="items[i]?.max"
+          [step]="items[i]?.step"
+          aria-label="Grams value"
+        />
+
+        <button type="button" class="btn ghost tiny" (click)="resetRow(i)">
+          Reset
+        </button>
+      </div>
+
+      <!-- slim macro strip -->
+      <div class="macros-inline">
+        <span class="pill"
+          >kcal <b>{{ items[i]?.computedKcal | number : "1.0-0" }}</b></span
+        >
+        <span class="pill"
+          >P <b>{{ items[i]?.computedProtein | number : "1.1-1" }} g</b></span
+        >
+        <span class="pill"
+          >C <b>{{ items[i]?.computedCarbs | number : "1.1-1" }} g</b></span
+        >
+        <span class="pill"
+          >F <b>{{ items[i]?.computedFat | number : "1.1-1" }} g</b></span
+        >
+        <span class="perg"
+          >({{ items[i]?.kcalPerG | number : "1.2-2" }} kcal/g)</span
+        >
+      </div>
+    </div>
+  </div>
+</div>

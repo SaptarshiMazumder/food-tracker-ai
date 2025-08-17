@@ -1,0 +1,56 @@
+.app-container {
+  /* Removed max-width and padding constraints for full-width layout */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.header h1 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 2rem;
+  font-weight: 300;
+}
+
+.navigation {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.nav-tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  color: #7f8c8d;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.nav-tab:hover {
+  color: #3498db;
+  background-color: #ecf0f1;
+}
+
+.nav-tab.active {
+  color: #3498db;
+  border-color: #3498db;
+  background-color: #ebf3fd;
+}
+
+.main-content {
+  /* Removed block styling - keeping it clean and flat */
+}
+
+.tab-content {
+  min-height: 400px;
+}
+

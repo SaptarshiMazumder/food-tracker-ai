@@ -1,0 +1,78 @@
+<div class="input-container">
+  <div class="input-section">
+    <label for="ingredient-input" class="input-label">Add Ingredients</label>
+    <div class="input-group">
+      <input
+        id="ingredient-input"
+        type="text"
+        [(ngModel)]="ingredientInput"
+        (keypress)="onKeyPress($event)"
+        placeholder="Type an ingredient and press Enter or click Add"
+        class="ingredient-input"
+      />
+      <button
+        (click)="addIngredient()"
+        class="add-btn"
+        [disabled]="!ingredientInput.trim()"
+      >
+        Add
+      </button>
+    </div>
+  </div>
+
+  <div class="mode-section">
+    <label class="input-label">Search Mode:</label>
+    <div class="mode-options">
+      <label class="mode-option">
+        <input
+          type="radio"
+          name="searchMode"
+          [value]="'flexible'"
+          [(ngModel)]="searchMode"
+        />
+        <span class="mode-label">
+          <strong>Flexible</strong> - Show all details immediately (slower)
+        </span>
+      </label>
+      <label class="mode-option">
+        <input
+          type="radio"
+          name="searchMode"
+          [value]="'strict'"
+          [(ngModel)]="searchMode"
+        />
+        <span class="mode-label">
+          <strong>Strict</strong> - Show basic info first, click for details
+          (faster)
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="ingredients-section" *ngIf="ingredients.length > 0">
+    <h3>Selected Ingredients:</h3>
+    <div class="ingredients-list">
+      <div
+        *ngFor="let ingredient of ingredients; let i = index"
+        class="ingredient-tag"
+      >
+        <span class="ingredient-name">{{ ingredient }}</span>
+        <button
+          (click)="removeIngredient(i)"
+          class="remove-btn"
+          title="Remove ingredient"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+
+    <button
+      (click)="submitQuery()"
+      class="search-btn"
+      [disabled]="ingredients.length === 0"
+    >
+      🔍 Find Recipes
+    </button>
+  </div>
+</div>

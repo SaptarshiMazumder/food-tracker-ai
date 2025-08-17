@@ -1,0 +1,36 @@
+<form class="row" [formGroup]="form" (ngSubmit)="submit()">
+  <label class="file">
+    <input
+      type="file"
+      accept="image/*"
+      multiple
+      (change)="onFileChange($event)"
+    />
+    <span>{{
+      fileNames.length
+        ? fileNames.length + " image(s) selected"
+        : "Select image(s)"
+    }}</span>
+  </label>
+
+  <button
+    class="btn"
+    type="submit"
+    [disabled]="!form.get('files')?.value?.length"
+  >
+    Analyze
+  </button>
+
+  <button class="btn ghost" type="button" (click)="reset()">Clear</button>
+</form>
+
+<div class="row preview" *ngIf="filePreviews.length">
+  <div class="caption">Selected ({{ filePreviews.length }})</div>
+  <div class="thumbs">
+    <img
+      *ngFor="let src of filePreviews; index as i"
+      [src]="src"
+      [alt]="fileNames[i]"
+    />
+  </div>
+</div>

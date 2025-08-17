@@ -1,0 +1,61 @@
+# Python virtual environment
+venv/
+env/
+ENV/
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+
+# Large model files
+*.pt
+*.pth
+*.h5
+*.pb
+
+# Image files (not needed for deployment)
+images/
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# Development files
+.git/
+.gitignore
+README.md
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+uploads/
+old/
+
+# Documentation
+*.md
+docs/
+
+# Test files
+test/
+tests/
+*_test.py
+test_*.py
+
+# Local configuration
+.env
+.env.local
+.env.production

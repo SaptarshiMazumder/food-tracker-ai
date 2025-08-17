@@ -1,0 +1,25 @@
+.timings {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafafa;
+}
+.title { font-weight: 600; margin-bottom: 8px; color: #333; }
+
+/* Grid of pairs: label on the left, value on the right */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+li { display: flex; justify-content: space-between; padding: 4px 0; }
+.label { color: #666; text-transform: capitalize; }
+.total { display: flex; justify-content: space-between; border-top: 1px dashed #eee; margin-top: 8px; padding-top: 8px; }
+
+/* Stack items on phones */
+@media (max-width: 600px) {
+  ul { grid-template-columns: 1fr; }
+}
