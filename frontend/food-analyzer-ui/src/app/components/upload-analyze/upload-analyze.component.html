@@ -1,0 +1,188 @@
+<app-upload-input
+  (analyze)="onAnalyze($event)"
+  (clear)="onClear()"
+></app-upload-input>
+
+<div class="row error" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+<!-- show panel only after a run starts and something arrived -->
+<div
+  class="panel"
+  *ngIf="
+    started &&
+    (gotRecognize || gotIngr || gotCalories || (result && result.total_ms))
+  "
+>
+  <h2 class="panel-title">Result</h2>
+
+  <div class="result-grid">
+    <!-- LEFT: content -->
+    <div class="result-left">
+      <!-- 1) RECOGNIZE -->
+      <section class="card">
+        <header class="card-head">
+          <span class="eyebrow">1. Recognize</span>
+          <span class="pill" *ngIf="gotRecognize"
+            >Conf {{ result.dish_confidence | number : "1.2-2" }}</span
+          >
+          <span class="pill ghost" *ngIf="!gotRecognize">working…</span>
+        </header>
+
+        <div *ngIf="gotRecognize; else recSkeleton">
+          <h3 class="dish">{{ result.dish }}</h3>
+
+          <ng-container *ngIf="result.ingredients_detected as ing">
+            <div class="chips" *ngIf="ing.length">
+              <span class="chip" *ngFor="let t of ing">{{ t }}</span>
+            </div>
+          </ng-container>
+        </div>
+        <ng-template #recSkeleton>
+          <div class="skeleton line w60"></div>
+          <div class="chips">
+            <span class="chip skeleton w20"></span
+            ><span class="chip skeleton w18"></span
+            ><span class="chip skeleton w24"></span>
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- 2) GRAMS -->
+      <section class="card">
+        <header class="card-head">
+          <span class="eyebrow">2. Portion (grams)</span>
+          <span class="pill" *ngIf="gotIngr"
+            >{{ result.total_grams | number : "1.0-0" }} g total</span
+          >
+          <span class="pill ghost" *ngIf="!gotIngr">estimating…</span>
+        </header>
+
+        <div *ngIf="gotIngr; else ingSkeleton">
+          <div class="mini-rows" *ngIf="result.items_grams?.length">
+            <div class="mini-row" *ngFor="let it of result.items_grams">
+              <div class="mini-name">{{ it.name }}</div>
+              <div class="mini-val">{{ it.grams | number : "1.0-0" }} g</div>
+            </div>
+          </div>
+          <div class="note subtle" *ngIf="result.grams_confidence">
+            confidence {{ result.grams_confidence | number : "1.2-2" }}
+          </div>
+        </div>
+        <ng-template #ingSkeleton>
+          <div class="skeleton line w40"></div>
+          <div class="mini-rows">
+            <div class="mini-row">
+              <div class="skeleton line w30"></div>
+              <div class="skeleton line w15"></div>
+            </div>
+            <div class="mini-row">
+              <div class="skeleton line w28"></div>
+              <div class="skeleton line w12"></div>
+            </div>
+            <div class="mini-row">
+              <div class="skeleton line w34"></div>
+              <div class="skeleton line w10"></div>
+            </div>
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- 3) CALORIES -->
+      <section class="card">
+        <header class="card-head">
+          <span class="eyebrow">3. Calories & macros</span>
+          <span class="pill" *ngIf="gotCalories">ready</span>
+          <span class="pill ghost" *ngIf="!gotCalories">calculating…</span>
+        </header>
+
+        <div *ngIf="gotCalories; else calSkeleton">
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-k">Total kcal</div>
+              <div class="stat-v">
+                {{ result.total_kcal | number : "1.0-0" }}
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-k">Protein</div>
+              <div class="stat-v">
+                {{ result.total_protein_g ?? 0 | number : "1.1-1" }} g
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-k">Carbs</div>
+              <div class="stat-v">
+                {{ result.total_carbs_g ?? 0 | number : "1.1-1" }} g
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-k">Fat</div>
+              <div class="stat-v">
+                {{ result.total_fat_g ?? 0 | number : "1.1-1" }} g
+              </div>
+            </div>
+          </div>
+          <div class="note" *ngIf="result.notes">
+            <b>Note:</b> {{ result.notes }}
+          </div>
+        </div>
+
+        <ng-template #calSkeleton>
+          <div class="stats">
+            <div class="stat">
+              <div class="skeleton line w50"></div>
+              <div class="skeleton line w30"></div>
+            </div>
+            <div class="stat">
+              <div class="skeleton line w40"></div>
+              <div class="skeleton line w25"></div>
+            </div>
+            <div class="stat">
+              <div class="skeleton line w38"></div>
+              <div class="skeleton line w25"></div>
+            </div>
+            <div class="stat">
+              <div class="skeleton line w30"></div>
+              <div class="skeleton line w20"></div>
+            </div>
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- SLIDERS appear after calories -->
+      <section *ngIf="gotCalories">
+        <h3 class="section-title">Adjust portions</h3>
+        <app-ingredient-table
+          [items]="uiItems"
+          (totals)="onTotals($event)"
+        ></app-ingredient-table>
+
+        <div class="totals" *ngIf="totals">
+          <div class="totals-row">
+            <span>Adjusted totals</span>
+            <b>
+              {{ totals.grams | number : "1.0-0" }} g •
+              {{ totals.kcal | number : "1.0-0" }} kcal •
+              {{ totals.protein | number : "1.1-1" }} g protein •
+              {{ totals.carbs | number : "1.1-1" }} g carbs •
+              {{ totals.fat | number : "1.1-1" }} g fat
+            </b>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT: timings -->
+    <app-timings-panel
+      class="result-right"
+      [timings]="result && result.timings ? result.timings : null"
+      [totalMs]="result && result.total_ms != null ? result.total_ms : null"
+    >
+    </app-timings-panel>
+  </div>
+</div>
+
+<!-- subtle footer status -->
+<div class="spinner" *ngIf="started && loading">
+  Working… you’ll see results step-by-step.
+</div>

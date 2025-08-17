@@ -1,0 +1,19 @@
+# ---- Core web server ----
+Flask>=3.0
+flask-cors>=4.0
+python-dotenv>=1.0
+
+# ---- Google Gemini SDK (the one you use: `from google import genai`) ----
+google-genai>=0.3
+
+# ---- Orchestration (your langgraph/graph.py pieces) ----
+langgraph>=0.2
+
+# ---- Image helpers (serving/saving overlays, basic ops) ----
+Pillow>=10.3
+opencv-python-headless
+numpy>=1.26
+
+# ---- Utilities / typing ----
+pydantic>=2.7
+requests>=2.32

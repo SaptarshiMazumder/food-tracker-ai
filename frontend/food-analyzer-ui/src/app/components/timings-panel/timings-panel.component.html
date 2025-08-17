@@ -1,0 +1,13 @@
+<div class="timings" *ngIf="timings">
+  <div class="title">Processing time</div>
+  <ul>
+    <li *ngFor="let k of keysInOrder(timings)">
+      <span class="label">{{ k.replace("_ms", "") }}</span>
+      <b>{{ timings![k] | number : "1.0-0" }} ms</b>
+    </li>
+  </ul>
+  <div class="total" *ngIf="totalMs != null">
+    <span>Total</span>
+    <b>{{ totalMs | number : "1.0-0" }} ms</b>
+  </div>
+</div>
