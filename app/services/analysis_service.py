@@ -9,10 +9,10 @@ from ..models.analysis import (
 )
 
 # Import external modules
-from graph_llm_ingredients import run_pipeline
-from gemini_recognize import gemini_recognize_dish
-from gemini_ingredients import ingredients_from_image
-from gemini_calories import calories_from_ingredients
+from ..services.pipeline.graph_llm_ingredients import run_pipeline
+from ..services.gemini.gemini_recognize import gemini_recognize_dish
+from ..services.gemini.gemini_ingredients import ingredients_from_image
+from ..services.gemini.gemini_calories import calories_from_ingredients
 
 class AnalysisService:
     """Service for handling food analysis operations"""
@@ -145,7 +145,7 @@ class AnalysisService:
         
         if use_logmeal:
             # Use LogMeal for ingredient detection
-            from logmeal_ingredients import ingredients_from_logmeal
+            from ..services.ingredients.logmeal_ingredients import ingredients_from_logmeal
             ing = yield from call_with_heartbeat(
                 lambda: ingredients_from_logmeal(image_paths)
             )

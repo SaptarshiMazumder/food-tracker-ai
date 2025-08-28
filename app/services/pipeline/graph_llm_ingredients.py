@@ -3,11 +3,11 @@ from typing import TypedDict, Optional, Dict, Any, List
 from langgraph.graph import StateGraph, END
 import time
 
-from gemini_recognize import gemini_recognize_dish
-from gemini_ingredients import ingredients_from_image
-from gemini_calories import calories_from_ingredients
+from ..gemini.gemini_recognize import gemini_recognize_dish
+from ..gemini.gemini_ingredients import ingredients_from_image
+from ..gemini.gemini_calories import calories_from_ingredients
 
-from logmeal_ingredients import ingredients_from_logmeal
+from ..ingredients.logmeal_ingredients import ingredients_from_logmeal
 import os
 USE_LOGMEAL = os.getenv("USE_LOGMEAL", "1")
 
@@ -79,7 +79,7 @@ def node_ing_quant(state: S) -> S:
         stage_name = "ing_quant(logmeal)"
     else:
         # --- fallback: your old Gemini qty node ---
-        from gemini_ingredients import ingredients_from_image
+        from ..gemini.gemini_ingredients import ingredients_from_image
         res = ingredients_from_image(
             state["project"], state["location"], state["model"], state["image_paths"],
             dish_hint=state.get("dish",""), ing_hint=state.get("ingredients", [])
