@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
@@ -287,7 +287,7 @@ export default function AnalyzeScreen() {
           {/* Adjust portions */}
           {uiItems.length > 0 ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>ADJUST PORTIONS</Text>
+              <Text style={styles.sectionTitle}>ADJUST INGREDIENTS</Text>
               {uiItems.map((u, i) => (
                 <View key={i} style={{ marginBottom: 12 }}>
                   <View style={styles.rowBetween}>
@@ -307,15 +307,18 @@ export default function AnalyzeScreen() {
                         }}
                       />
                       <Text>g</Text>
-                      <Button
-                        title="Reset"
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        style={styles.resetBtn}
                         onPress={() => {
                           const next = [...grams];
                           next[i] = u.baseGrams;
                           setGrams(next);
                           setTotals(computeTotals(uiItems, next));
                         }}
-                      />
+                      >
+                        <Text style={styles.resetBtnText}>Reset</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                   {u.note ? (
@@ -333,17 +336,26 @@ export default function AnalyzeScreen() {
                       setTotals(computeTotals(uiItems, next));
                     }}
                   />
-                  <Text style={styles.macroStrip}>
-                    Cals {(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)} • P {(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g • C {(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g • F {(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g
-                  </Text>
+                  <View style={styles.macroRow}>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)}</Text></View>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
+                  </View>
+                  <Text style={styles.perGText}>(
+                    {u.kcalPerG.toFixed(2)} kcal/g
+                  )</Text>
                 </View>
               ))}
               {totals ? (
                 <View style={styles.totalsContainer}>
                   <Text style={styles.totalsTitle}>Adjusted totals</Text>
-                  <Text style={styles.totalsLine}>
-                    {totals.grams} g • {totals.kcal} Cals • {totals.protein} g protein • {totals.carbs} g carbs • {totals.fat} g fat
-                  </Text>
+                  <View style={styles.macroRow}>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{totals.kcal}</Text></View>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{totals.protein} g</Text></View>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{totals.carbs} g</Text></View>
+                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{totals.fat} g</Text></View>
+                  </View>
                 </View>
               ) : null}
             </View>
@@ -351,16 +363,22 @@ export default function AnalyzeScreen() {
 
           
 
-          {/* TIMINGS */}
+          {/* processing time */}
           {result?.timings ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>TIMINGS</Text>
-              {Object.entries(result!.timings!).map(([k, v]) => (
-                <View style={styles.rowBetween} key={k}>
-                  <Text style={styles.timingLabel}>{k.replace('_', ' ')}</Text>
-                  <Text style={styles.timingValue}>{(Number(v) / 1000).toFixed(2)} s</Text>
-                </View>
-              ))}
+              <Text style={styles.sectionTitle}>processing time</Text>
+              {Object.entries(result!.timings!).map(([k, v]) => {
+                let label = k.replace('_', ' ');
+                if (k === 'recognize_ms') label = 'identify food';
+                if (k === 'ing_quant_ms') label = 'identify ingredients quantity';
+                if (k === 'calories_ms') label = 'calculate macros';
+                return (
+                  <View style={styles.rowBetween} key={k}>
+                    <Text style={styles.timingLabel}>{label}</Text>
+                    <Text style={styles.timingValue}>{(Number(v) / 1000).toFixed(2)} s</Text>
+                  </View>
+                );
+              })}
               {typeof result!.total_ms === 'number' ? (
                 <View style={[styles.rowBetween, { marginTop: 6 }]}> 
                   <Text style={styles.timingLabelBold}>Total</Text>
@@ -516,16 +534,51 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   gramsInput: {
-    minWidth: 64,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
+    minWidth: 56,
+    height: 28,
+    paddingVertical: 0,
+    paddingHorizontal: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#888',
+    borderRadius: 8,
+    backgroundColor: '#fff',
     color: '#333',
+    fontSize: 13,
   },
   macroStrip: {
     color: '#666',
+  },
+  macroRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  macroPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: '#f1f1f1',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#d0d0d0',
+  },
+  macroPillLabel: {
+    color: '#444',
+    fontWeight: '400',
+    fontSize: 11,
+    textTransform: 'capitalize',
+  },
+  macroPillValue: {
+    color: '#333',
+    fontWeight: '600',
+    fontSize: 11,
+  },
+  perGText: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
   },
   ingName: {
     color: '#444',
@@ -545,5 +598,20 @@ const styles = StyleSheet.create({
   timingValueBold: {
     color: '#111',
     fontWeight: '700',
+  },
+  resetBtn: {
+    paddingHorizontal: 8,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#777',
+  },
+  resetBtnText: {
+    color: '#333',
+    fontWeight: '500',
+    fontSize: 12,
   },
 });
