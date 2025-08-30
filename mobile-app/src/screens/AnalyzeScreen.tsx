@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
 import { Colors } from '../theme/colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
 import * as DocumentPicker from 'expo-document-picker';
@@ -286,7 +287,10 @@ export default function AnalyzeScreen() {
         <View style={styles.result}>
           {/* 1. FOOD */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>1. FOOD</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.sectionTitle}>1. FOOD</Text>
+              <Ionicons name="fast-food-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+            </View>
             {gotRecognize ? (
               <>
                 {result?.dish ? <Text style={styles.dishName}>{result.dish}</Text> : null}
@@ -313,7 +317,10 @@ export default function AnalyzeScreen() {
           {/* 2. MACROS */}
           <View style={styles.card}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.sectionTitle}>2. MACROS</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionTitle}>2. MACROS</Text>
+                <Ionicons name="stats-chart-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+              </View>
               {typeof result?.total_grams === 'number' ? (
                 <View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{result!.total_grams} g</Text></View>
               ) : null}
@@ -397,7 +404,10 @@ export default function AnalyzeScreen() {
           {/* 3. INGREDIENTS */}
           <View style={styles.card}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={styles.sectionTitle}>3. INGREDIENTS PORTIONS</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionTitle}>3. INGREDIENTS PORTIONS</Text>
+                <Ionicons name="scale-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+              </View>
             </View>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
@@ -434,7 +444,10 @@ export default function AnalyzeScreen() {
           {/* Adjust portions */}
           {uiItems.length > 0 ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>ADJUST INGREDIENTS</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionTitle}>ADJUST PORTIONS</Text>
+                <Ionicons name="create-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+              </View>
               {uiItems.map((u, i) => (
                 <View key={i} style={{ marginBottom: 12 }}>
                   <View style={styles.rowBetween}>
@@ -517,7 +530,10 @@ export default function AnalyzeScreen() {
           {/* processing time */}
           {result?.timings ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>PROCESSING TIME</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.sectionTitle}>PROCESSING TIME</Text>
+                <Ionicons name="time-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+              </View>
               {Object.entries(result!.timings!).map(([k, v]) => {
                 let label = k.replace('_', ' ');
                 if (k === 'recognize_ms') label = 'identify food';
@@ -656,7 +672,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   iconAlignUp: {
-    transform: [{ translateY: -1 }],
+    transform: [{ translateY: -5 }],
   },
   ringOverlay: {
     position: 'absolute',
