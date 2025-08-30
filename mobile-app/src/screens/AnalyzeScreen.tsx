@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
@@ -14,100 +13,93 @@ export default function AnalyzeScreen() {
   const [grams, setGrams] = useState<number[]>([]);
   const [totals, setTotals] = useState<UiTotals | null>(null);
 
-  const pickWithDocumentPicker = async () => {
+  const pickWithDocumentPicker = async (): Promise<string[]> => {
     try {
       const doc = await DocumentPicker.getDocumentAsync({
         type: ['image/*'],
         multiple: true,
         copyToCacheDirectory: true,
       });
-      if (doc.canceled) return;
+      if (doc.canceled) return [];
       const assets: any[] = (doc as any).assets || [];
       const uris = assets.length > 0 ? assets.map((a) => a.uri) : ((doc as any).uri ? [ (doc as any).uri ] : []);
-      if (uris.length > 0) {
-        setSelectedUris((prev) => Array.from(new Set([ ...prev, ...uris ])));
-      }
+      return uris;
     } catch (e: any) { // Added type annotation for e
       Alert.alert('Picker error', `Could not open any picker. Error: ${e.message}`); // Display error message
+      return [];
     }
   };
 
   const onUpload = async () => {
-    // Prefer Document Picker first (works without Google Play on emulators)
+    // Clear previous selections and results
+    setSelectedUris([]);
+    setResult(null);
+    setUiItems([]);
+    setGrams([]);
+    setTotals(null);
+    setLoading(false);
+
+    // Prefer Document Picker first (multi-select friendly)
+    const docUris = await pickWithDocumentPicker();
+    if (docUris.length > 0) {
+      setSelectedUris(Array.from(new Set(docUris)));
+      return;
+    }
+
+    // If user cancelled or provider doesn't support multi-select, do nothing.
+  };
+
+  const onAnalyze = async () => {
+    if (selectedUris.length === 0) return;
     try {
-      await pickWithDocumentPicker();
-      if (selectedUris.length > 0) return;
-    } catch {}
-
-    // If user canceled or failed, try the system image library
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission required', 'Please allow photo library access to pick an image.');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
-        allowsMultipleSelection: true as any,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedUris((prev) => Array.from(new Set([ ...prev, ...result.assets.map((a) => a.uri) ])));
+      setLoading(true);
+      setResult(null);
+      setUiItems([]);
+      setGrams([]);
+      setTotals(null);
+      // Streaming flow exactly like web UI with Gemini only (no LogMeal)
+      const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
+      const acc: any = {};
+      for await (const ev of stream) {
+        if (ev.phase === 'recognize') {
+          Object.assign(acc, ev.data);
+          setResult({ ...(result || {}), ...acc });
+        } else if (ev.phase === 'ing_quant') {
+          Object.assign(acc, ev.data);
+          setResult({ ...(result || {}), ...acc });
+        } else if (ev.phase === 'calories') {
+          Object.assign(acc, ev.data);
+          setResult({ ...(result || {}), ...acc });
+        } else if (ev.phase === 'done') {
+          Object.assign(acc, ev.data);
+          const res = { ...(result || {}), ...acc } as AnalysisResponse;
+          setResult(res);
+          const ui = buildUiItems(res);
+          setUiItems(ui);
+          const baseGrams = ui.map((u) => u.baseGrams);
+          setGrams(baseGrams);
+          setTotals(computeTotals(ui, baseGrams));
+          break;
+        }
       }
     } catch (e: any) {
-      Alert.alert('Picker error', `Could not open any picker. Error: ${e.message}`);
+      Alert.alert('Analyze failed', e?.message || 'Unknown error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const runAnalysis = async () => {
-      if (selectedUris.length === 0) return;
-      try {
-        setLoading(true);
-        setResult(null);
-        // Streaming flow exactly like web UI with Gemini only (no LogMeal)
-        const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
-        const acc: any = {};
-        for await (const ev of stream) {
-          if (ev.phase === 'recognize') {
-            Object.assign(acc, ev.data);
-            setResult({ ...(result || {}), ...acc });
-          } else if (ev.phase === 'ing_quant') {
-            Object.assign(acc, ev.data);
-            setResult({ ...(result || {}), ...acc });
-          } else if (ev.phase === 'calories') {
-            Object.assign(acc, ev.data);
-            setResult({ ...(result || {}), ...acc });
-          } else if (ev.phase === 'done') {
-            Object.assign(acc, ev.data);
-            const res = { ...(result || {}), ...acc } as AnalysisResponse;
-            setResult(res);
-            const ui = buildUiItems(res);
-            setUiItems(ui);
-            const baseGrams = ui.map((u) => u.baseGrams);
-            setGrams(baseGrams);
-            setTotals(computeTotals(ui, baseGrams));
-            break;
-          }
-        }
-      } catch (e: any) {
-        Alert.alert('Analyze failed', e?.message || 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-    runAnalysis();
-  }, [selectedUris]);
+  // No auto-analysis; user must press Analyze
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Analyze Meal</Text>
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
       <View style={styles.actions}>
-        <Button title="Upload Images" onPress={onUpload} />
+        <Button title="Upload Images" onPress={onUpload} disabled={loading} />
+        <Text style={{ marginTop: 6, color: '#777' }}>
+          Tip: In the picker, long-press then tap multiple items to multi-select.
+        </Text>
       </View>
       {selectedUris.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery} contentContainerStyle={{ gap: 8 }}>
@@ -116,6 +108,22 @@ export default function AnalyzeScreen() {
           ))}
         </ScrollView>
       ) : null}
+
+      <View style={styles.buttonRow}>
+        <View style={styles.half}>
+          <Button title="Analyze" onPress={onAnalyze} disabled={selectedUris.length === 0 || loading} />
+        </View>
+        <View style={styles.half}>
+          <Button title="Clear" onPress={() => {
+            if (loading) return;
+            setSelectedUris([]);
+            setResult(null);
+            setUiItems([]);
+            setGrams([]);
+            setTotals(null);
+          }} disabled={selectedUris.length === 0 || loading} />
+        </View>
+      </View>
 
       {loading ? (
         <View style={{ marginTop: 16 }}>
@@ -329,6 +337,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginTop: 8,
+  },
+  buttonRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  half: {
+    flex: 1,
   },
   tile: {
     width: '48%',
