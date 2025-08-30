@@ -1,7 +1,7 @@
 # gemini_recognize.py
 from typing import Dict, List
 from google.genai import types
-from gemini_client import make_client, prepare_image_parts, extract_text_from_response, first_json_block, recognize_schema
+from .gemini_client import make_client, prepare_image_parts, extract_text_from_response, first_json_block, recognize_schema
 
 UTENSIL_SCALE = (
     "If a standard fork or spoon is visible, use it as a scale reference:\n"

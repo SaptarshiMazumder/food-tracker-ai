@@ -2,7 +2,7 @@
 import re
 from typing import Dict, List, Optional
 from google.genai import types
-from gemini_client import make_client, extract_text_from_response, first_json_block
+from .gemini_client import make_client, extract_text_from_response, first_json_block
 
 def fnum(x, default=0.0) -> float:
     if isinstance(x, (int, float)):
