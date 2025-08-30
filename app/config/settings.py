@@ -14,7 +14,7 @@ class Config:
     MAX_CONTENT_LENGTH = 25 * 1024 * 1024  # 25MB per request
     
     # Upload settings
-    UPLOAD_DIR = os.path.abspath(os.getenv("UPLOAD_DIR", "./uploads"))
+    UPLOAD_DIR = os.path.abspath(os.getenv("UPLOAD_DIR", "./app/uploads"))
     ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
     
     # Google Cloud settings
