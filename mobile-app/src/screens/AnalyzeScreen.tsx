@@ -17,6 +17,7 @@ export default function AnalyzeScreen() {
   const [gotRecognize, setGotRecognize] = useState(false);
   const [gotIngr, setGotIngr] = useState(false);
   const [gotCalories, setGotCalories] = useState(false);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
@@ -88,6 +89,7 @@ export default function AnalyzeScreen() {
     const docUris = await pickWithDocumentPicker();
     if (docUris.length > 0) {
       setSelectedUris(Array.from(new Set(docUris)));
+      setHasAnalyzed(false);
       return;
     }
 
@@ -145,6 +147,7 @@ export default function AnalyzeScreen() {
             }
             return res;
           });
+          setHasAnalyzed(true);
           break;
         }
       }
@@ -177,7 +180,7 @@ export default function AnalyzeScreen() {
 
       <View style={styles.buttonRow}>
         <View style={styles.half}>
-          <Button title="Analyze" onPress={onAnalyze} disabled={selectedUris.length === 0 || loading} />
+          <Button title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"} onPress={onAnalyze} disabled={selectedUris.length === 0 || loading} />
         </View>
         <View style={styles.half}>
           <Button title="Clear" onPress={() => {
@@ -192,6 +195,7 @@ export default function AnalyzeScreen() {
             setGotIngr(false);
             setGotCalories(false);
             setLoading(false);
+            setHasAnalyzed(false);
           }} disabled={selectedUris.length === 0 || loading} />
         </View>
       </View>
@@ -203,7 +207,7 @@ export default function AnalyzeScreen() {
         </View>
       ) : null}
 
-      {started && (gotRecognize || gotIngr || gotCalories || (result && typeof result.total_ms === 'number')) ? (
+      {started ? (
         <View style={styles.result}>
           {/* 1. FOOD */}
           <View style={styles.card}>
