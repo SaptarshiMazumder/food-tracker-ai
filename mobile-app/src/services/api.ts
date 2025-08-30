@@ -49,16 +49,16 @@ export interface AnalysisResponse {
   msg?: string;
 }
 
-export async function uploadAnalyzeImage(uri: string, options?: { model?: string; useLogmeal?: boolean }): Promise<AnalysisResponse> {
+export async function uploadAnalyzeImage(uriOrUris: string | string[], options?: { model?: string; useLogmeal?: boolean }): Promise<AnalysisResponse> {
   const base = getBaseUrl();
   const form = new FormData();
-  const filename = uri.split('/').pop() || 'image.jpg';
-  const ext = (filename.split('.').pop() || 'jpg').toLowerCase();
-  const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-
-  // React Native's fetch supports file-like objects with uri, but TS types don't.
-  // Cast to any to avoid incorrect DOM FormData typing issues in RN.
-  form.append('image', { uri, name: filename, type: mime } as any);
+  const uris = Array.isArray(uriOrUris) ? uriOrUris : [uriOrUris];
+  for (const uri of uris) {
+    const filename = uri.split('/').pop() || 'image.jpg';
+    const ext = (filename.split('.').pop() || 'jpg').toLowerCase();
+    const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    form.append('image', { uri, name: filename, type: mime } as any);
+  }
   if (options?.model) form.append('model', options.model);
   if (typeof options?.useLogmeal !== 'undefined') form.append('use_logmeal', String(options.useLogmeal));
 
@@ -86,15 +86,18 @@ export type StreamEvent =
   | { phase: 'error'; data: any };
 
 export async function analyzeStream(
-  uri: string,
+  uriOrUris: string | string[],
   opts: { model?: string; useLogmeal?: boolean } = {}
 ): Promise<AsyncGenerator<StreamEvent, void, unknown>> {
   const base = getBaseUrl();
   const form = new FormData();
-  const filename = uri.split('/').pop() || 'image.jpg';
-  const ext = (filename.split('.').pop() || 'jpg').toLowerCase();
-  const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  form.append('image', { uri, name: filename, type: mime } as any);
+  const uris = Array.isArray(uriOrUris) ? uriOrUris : [uriOrUris];
+  for (const uri of uris) {
+    const filename = uri.split('/').pop() || 'image.jpg';
+    const ext = (filename.split('.').pop() || 'jpg').toLowerCase();
+    const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    form.append('image', { uri, name: filename, type: mime } as any);
+  }
   form.append('model', opts.model || 'gemini-2.5-pro');
   if (typeof opts.useLogmeal !== 'undefined') form.append('use_logmeal', String(opts.useLogmeal));
 

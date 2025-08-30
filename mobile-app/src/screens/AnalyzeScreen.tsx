@@ -7,7 +7,7 @@ import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBui
 import Slider from '@react-native-community/slider';
 
 export default function AnalyzeScreen() {
-  const [selectedUri, setSelectedUri] = useState<string | null>(null);
+  const [selectedUris, setSelectedUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [uiItems, setUiItems] = useState<UiItem[]>([]);
@@ -18,13 +18,14 @@ export default function AnalyzeScreen() {
     try {
       const doc = await DocumentPicker.getDocumentAsync({
         type: ['image/*'],
-        multiple: false,
+        multiple: true,
         copyToCacheDirectory: true,
       });
       if (doc.canceled) return;
-      const asset = (doc as any).assets?.[0] || (doc as any);
-      if (asset?.uri) {
-        setSelectedUri(asset.uri);
+      const assets: any[] = (doc as any).assets || [];
+      const uris = assets.length > 0 ? assets.map((a) => a.uri) : ((doc as any).uri ? [ (doc as any).uri ] : []);
+      if (uris.length > 0) {
+        setSelectedUris((prev) => Array.from(new Set([ ...prev, ...uris ])));
       }
     } catch (e: any) { // Added type annotation for e
       Alert.alert('Picker error', `Could not open any picker. Error: ${e.message}`); // Display error message
@@ -35,7 +36,7 @@ export default function AnalyzeScreen() {
     // Prefer Document Picker first (works without Google Play on emulators)
     try {
       await pickWithDocumentPicker();
-      if (selectedUri) return;
+      if (selectedUris.length > 0) return;
     } catch {}
 
     // If user canceled or failed, try the system image library
@@ -50,10 +51,11 @@ export default function AnalyzeScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
+        allowsMultipleSelection: true as any,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedUri(result.assets[0].uri);
+        setSelectedUris((prev) => Array.from(new Set([ ...prev, ...result.assets.map((a) => a.uri) ])));
       }
     } catch (e: any) {
       Alert.alert('Picker error', `Could not open any picker. Error: ${e.message}`);
@@ -62,12 +64,12 @@ export default function AnalyzeScreen() {
 
   useEffect(() => {
     const runAnalysis = async () => {
-      if (!selectedUri) return;
+      if (selectedUris.length === 0) return;
       try {
         setLoading(true);
         setResult(null);
         // Streaming flow exactly like web UI with Gemini only (no LogMeal)
-        const stream = await analyzeStream(selectedUri, { model: 'gemini-2.5-pro', useLogmeal: false });
+        const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
         const acc: any = {};
         for await (const ev of stream) {
           if (ev.phase === 'recognize') {
@@ -98,19 +100,21 @@ export default function AnalyzeScreen() {
       }
     };
     runAnalysis();
-  }, [selectedUri]);
+  }, [selectedUris]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Analyze Meal</Text>
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
       <View style={styles.actions}>
-        <Button title="Upload Image" onPress={onUpload} />
+        <Button title="Upload Images" onPress={onUpload} />
       </View>
-      {selectedUri ? (
-        <View style={styles.previewWrap}>
-          <Image source={{ uri: selectedUri }} style={styles.preview} />
-        </View>
+      {selectedUris.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery} contentContainerStyle={{ gap: 8 }}>
+          {selectedUris.map((u, i) => (
+            <Image key={i} source={{ uri: u }} style={styles.thumb} />
+          ))}
+        </ScrollView>
       ) : null}
 
       {loading ? (
@@ -181,9 +185,9 @@ export default function AnalyzeScreen() {
                 </View>
               ))}
               {totals ? (
-                <View style={[styles.rowBetween, { marginTop: 8 }]}> 
-                  <Text style={{ fontWeight: '600' }}>Adjusted totals</Text>
-                  <Text style={{ fontWeight: '600' }}>
+                <View style={styles.totalsContainer}>
+                  <Text style={styles.totalsTitle}>Adjusted totals</Text>
+                  <Text style={styles.totalsLine}>
                     {totals.grams} g • {totals.kcal} kcal • {totals.protein} g protein • {totals.carbs} g carbs • {totals.fat} g fat
                   </Text>
                 </View>
@@ -260,6 +264,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#f4f4f4',
   },
+  gallery: {
+    marginTop: 16,
+  },
+  thumb: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: '#f4f4f4',
+  },
   result: {
     marginTop: 16,
   },
@@ -332,5 +345,16 @@ const styles = StyleSheet.create({
   tileValue: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  totalsContainer: {
+    marginTop: 8,
+  },
+  totalsTitle: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  totalsLine: {
+    fontWeight: '600',
+    flexWrap: 'wrap',
   },
 });
