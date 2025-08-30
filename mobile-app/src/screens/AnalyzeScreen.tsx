@@ -159,12 +159,12 @@ export default function AnalyzeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Analyze Meal</Text>
+      {/* Removed explicit screen title per request */}
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
       <View style={styles.actions}>
         <Button title="Upload Images" onPress={onUpload} disabled={loading} />
         <Text style={{ marginTop: 6, color: '#777' }}>
-          Tip: In the picker, long-press then tap multiple items to multi-select.
+          In the picker, long-press then tap multiple items to multi-select.
         </Text>
       </View>
       {selectedUris.length > 0 ? (
@@ -207,7 +207,7 @@ export default function AnalyzeScreen() {
               <>
                 {result?.dish ? <Text style={styles.dishName}>{result.dish}</Text> : null}
                 {typeof result?.dish_confidence === 'number' ? (
-                  <Text style={styles.badge}>Conf {result.dish_confidence.toFixed(2)}</Text>
+                  <Text style={styles.badge}>Confidence {(result.dish_confidence * 100).toFixed(0)}%</Text>
                 ) : null}
                 {Array.isArray(result?.ingredients_detected) && result!.ingredients_detected!.length > 0 ? (
                   <View style={styles.tagsWrap}>
@@ -235,7 +235,7 @@ export default function AnalyzeScreen() {
             {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
               <>
                 <View style={styles.grid4}>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Total cals</Text><Text style={styles.tileValue}>{result!.total_kcal}</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Calories</Text><Text style={styles.tileValue}>{result!.total_kcal}</Text></View>
                   <View style={styles.tile}><Text style={styles.tileTitle}>Protein</Text><Text style={styles.tileValue}>{result!.total_protein_g} g</Text></View>
                   <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result!.total_carbs_g} g</Text></View>
                   <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result!.total_fat_g} g</Text></View>
@@ -254,7 +254,7 @@ export default function AnalyzeScreen() {
 
           {/* 3. Portion (grams) */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>3. Portion (grams) {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
+            <Text style={styles.sectionTitle}>3. Portion (g) {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
                 <>
@@ -265,7 +265,7 @@ export default function AnalyzeScreen() {
                     </View>
                   ))}
                   {typeof result?.grams_confidence === 'number' ? (
-                    <Text style={{ color: '#666' }}>confidence {result!.grams_confidence!.toFixed(2)}</Text>
+                    <Text style={{ color: '#666' }}>Confidence {(result!.grams_confidence! * 100).toFixed(0)}%</Text>
                   ) : null}
                 </>
               ) : null
@@ -321,7 +321,7 @@ export default function AnalyzeScreen() {
                 <View style={styles.totalsContainer}>
                   <Text style={styles.totalsTitle}>Adjusted totals</Text>
                   <Text style={styles.totalsLine}>
-                    {totals.grams} g • {totals.kcal} kcal • {totals.protein} g protein • {totals.carbs} g carbs • {totals.fat} g fat
+                    {totals.grams} g • {totals.kcal} Cals • {totals.protein} g protein • {totals.carbs} g carbs • {totals.fat} g fat
                   </Text>
                 </View>
               ) : null}
