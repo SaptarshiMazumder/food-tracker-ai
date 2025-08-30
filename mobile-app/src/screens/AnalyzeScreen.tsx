@@ -186,9 +186,27 @@ export default function AnalyzeScreen() {
             )}
           </View>
 
-          {/* 2. Portion (grams) */}
+          {/* 2. Macros */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>2. Portion (grams) {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
+            <Text style={styles.sectionTitle}>2. Macros</Text>
+            {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
+              <>
+                <View style={styles.grid4}>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Total cals</Text><Text style={styles.tileValue}>{result!.total_kcal}</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Protein</Text><Text style={styles.tileValue}>{result!.total_protein_g} g</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result!.total_carbs_g} g</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result!.total_fat_g} g</Text></View>
+                </View>
+                {result!.notes ? <Text style={{ marginTop: 8 }}>{result!.notes}</Text> : null}
+              </>
+            ) : (
+              <Text style={{ color: '#888' }}>calculating…</Text>
+            )}
+          </View>
+
+          {/* 3. Portion (grams) */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>3. Portion (grams) {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
                 <>
@@ -246,23 +264,7 @@ export default function AnalyzeScreen() {
             </View>
           ) : null}
 
-          {/* 3. Calories & Macros */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>3. Calories & Macros</Text>
-            {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
-              <>
-                <View style={styles.grid4}>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Total kcal</Text><Text style={styles.tileValue}>{result!.total_kcal}</Text></View>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Protein</Text><Text style={styles.tileValue}>{result!.total_protein_g} g</Text></View>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result!.total_carbs_g} g</Text></View>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result!.total_fat_g} g</Text></View>
-                </View>
-                {result!.notes ? <Text style={{ marginTop: 8 }}>{result!.notes}</Text> : null}
-              </>
-            ) : (
-              <Text style={{ color: '#888' }}>calculating…</Text>
-            )}
-          </View>
+          
 
           {/* Timings */}
           {result?.timings ? (
