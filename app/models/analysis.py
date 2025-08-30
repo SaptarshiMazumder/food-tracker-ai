@@ -69,14 +69,12 @@ class AnalysisResponse:
 class AnalysisRequest:
     """Analysis request model"""
     model: str = "gemini-2.5-pro"
-    use_logmeal: Optional[bool] = None
     enable_ab_test: bool = False
     enable_fallback: bool = False
 
 @dataclass
 class ABTestResult:
     """A/B test result model"""
-    logmeal: AnalysisResponse
     gemini: AnalysisResponse
     winner: str  # 'logmeal', 'gemini', or 'tie'
     comparison: Dict[str, Any]

@@ -7,10 +7,6 @@ from ..gemini.gemini_recognize import gemini_recognize_dish
 from ..gemini.gemini_ingredients import ingredients_from_image
 from ..gemini.gemini_calories import calories_from_ingredients
 
-from ..ingredients.logmeal_ingredients import ingredients_from_logmeal
-import os
-USE_LOGMEAL = os.getenv("USE_LOGMEAL", "0")
-
 class S(TypedDict):
     image_paths: List[str]
     project: Optional[str]
@@ -68,23 +64,13 @@ def node_recognize(state: S) -> S:
 def node_ing_quant(state: S) -> S:
     t0 = time.perf_counter()
 
-    # Check if use_logmeal is specified in state, otherwise fall back to environment variable
-    use_logmeal = state.get("use_logmeal")
-    if use_logmeal is None:
-        use_logmeal = USE_LOGMEAL == "1"
-    
-    if use_logmeal:
-        # --- NEW: call LogMeal ---
-        res = ingredients_from_logmeal(state["image_paths"])
-        stage_name = "ing_quant(logmeal)"
-    else:
-        # --- fallback: your old Gemini qty node ---
-        from ..gemini.gemini_ingredients import ingredients_from_image
-        res = ingredients_from_image(
-            state["project"], state["location"], state["model"], state["image_paths"],
-            dish_hint=state.get("dish",""), ing_hint=state.get("ingredients", [])
-        )
-        stage_name = "ing_quant(gemini)"
+    # Use Gemini for ingredient detection
+    from ..gemini.gemini_ingredients import ingredients_from_image
+    res = ingredients_from_image(
+        state["project"], state["location"], state["model"], state["image_paths"],
+        dish_hint=state.get("dish",""), ing_hint=state.get("ingredients", [])
+    )
+    stage_name = "ing_quant(gemini)"
 
     state["timings"]["ing_quant_ms"] = _ms(t0)
 
@@ -161,13 +147,12 @@ def build_graph():
     g.add_edge("calories", END)
     return g.compile()
 
-def run_pipeline(image_paths: List[str], project: Optional[str], location: str, model: str, use_logmeal: Optional[bool] = None):
+def run_pipeline(image_paths: List[str], project: Optional[str], location: str, model: str):
     init: S = {
         "image_paths": image_paths,
         "project": project,
         "location": location,
         "model": model,
-        "use_logmeal": use_logmeal,  # Add the use_logmeal parameter to state
         "dish": "", "ingredients": [], "gemini_conf": 0.0,
         "items": [], "total_grams": None, "ing_conf": None, "ing_notes": None,
         "nutr_items": [], "total_kcal": None, "total_protein_g": None, "total_carbs_g": None, "total_fat_g": None,

@@ -22,10 +22,10 @@ class AnalysisService:
         self.location = current_app.config['GOOGLE_CLOUD_LOCATION']
         self.default_model = current_app.config['DEFAULT_MODEL']
     
-    def run_full_analysis(self, image_paths: List[str], model: str, use_logmeal: bool = None) -> Dict[str, Any]:
+    def run_full_analysis(self, image_paths: List[str], model: str) -> Dict[str, Any]:
         """Run complete analysis pipeline"""
         try:
-            res = run_pipeline(image_paths, self.project, self.location, model, use_logmeal)
+            res = run_pipeline(image_paths, self.project, self.location, model)
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
@@ -116,7 +116,7 @@ class AnalysisService:
             "total_ms": res.get("total_ms", 0.0),
         }
     
-    def stream_analysis(self, image_paths: List[str], model: str, use_logmeal: bool = None) -> Generator[str, None, None]:
+    def stream_analysis(self, image_paths: List[str], model: str) -> Generator[str, None, None]:
         """Stream analysis results via SSE"""
         timings: Dict[str, float] = {}
         state: Dict[str, Any] = {"timings": timings}
@@ -147,20 +147,13 @@ class AnalysisService:
         # -------- ing_quant --------
         t0 = time.perf_counter()
         
-        if use_logmeal:
-            # Use LogMeal for ingredient detection
-            from ..services.ingredients.logmeal_ingredients import ingredients_from_logmeal
-            ing = yield from call_with_heartbeat(
-                lambda: ingredients_from_logmeal(image_paths)
+        # Use Gemini for ingredient detection
+        ing = yield from call_with_heartbeat(
+            lambda: ingredients_from_image(
+                self.project, self.location, model, image_paths,
+                dish_hint=state["dish"], ing_hint=state["ingredients_detected"]
             )
-        else:
-            # Use Gemini for ingredient detection
-            ing = yield from call_with_heartbeat(
-                lambda: ingredients_from_image(
-                    self.project, self.location, model, image_paths,
-                    dish_hint=state["dish"], ing_hint=state["ingredients_detected"]
-                )
-            )
+        )
         timings["ing_quant_ms"] = round((time.perf_counter() - t0) * 1000.0, 2)
 
         if "error" in ing:

@@ -86,8 +86,7 @@ def normalize_name(name: str) -> str:
         return "cooking oil"
     return n.strip()
 
-def parse_use_logmeal_param(param_value) -> bool:
-    return False
+
 
 # SSE (Server-Sent Events) helpers
 def sse_pack(event: str, obj: Dict[str, Any]) -> str:
