@@ -187,6 +187,11 @@ export default function AnalyzeScreen() {
             setUiItems([]);
             setGrams([]);
             setTotals(null);
+            setStarted(false);
+            setGotRecognize(false);
+            setGotIngr(false);
+            setGotCalories(false);
+            setLoading(false);
           }} disabled={selectedUris.length === 0 || loading} />
         </View>
       </View>
