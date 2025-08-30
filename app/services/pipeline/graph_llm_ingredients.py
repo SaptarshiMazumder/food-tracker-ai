@@ -9,7 +9,7 @@ from ..gemini.gemini_calories import calories_from_ingredients
 
 from ..ingredients.logmeal_ingredients import ingredients_from_logmeal
 import os
-USE_LOGMEAL = os.getenv("USE_LOGMEAL", "1")
+USE_LOGMEAL = os.getenv("USE_LOGMEAL", "0")
 
 class S(TypedDict):
     image_paths: List[str]
