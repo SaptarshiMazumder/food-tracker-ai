@@ -61,29 +61,25 @@ export default function AnalyzeScreen() {
       try {
         setLoading(true);
         setResult(null);
-        // Streaming flow to match web behavior
-        const stream = await analyzeStream(selectedUri, { model: 'gemini-2.5-pro', useLogmeal: true });
+        // Streaming flow exactly like web UI with Gemini only (no LogMeal)
+        const stream = await analyzeStream(selectedUri, { model: 'gemini-2.5-pro', useLogmeal: false });
         const acc: any = {};
         for await (const ev of stream) {
           if (ev.phase === 'recognize') {
             Object.assign(acc, ev.data);
+            setResult({ ...(result || {}), ...acc });
           } else if (ev.phase === 'ing_quant') {
             Object.assign(acc, ev.data);
+            setResult({ ...(result || {}), ...acc });
           } else if (ev.phase === 'calories') {
             Object.assign(acc, ev.data);
+            setResult({ ...(result || {}), ...acc });
           } else if (ev.phase === 'done') {
             Object.assign(acc, ev.data);
+            setResult({ ...(result || {}), ...acc });
             break;
           }
         }
-        // Fallback to non-logmeal if portions look collapsed
-        if (!acc.items_grams || acc.items_grams.length <= 1) {
-          try {
-            const res2 = await uploadAnalyzeImage(selectedUri, { model: 'gemini-2.5-pro', useLogmeal: false });
-            Object.assign(acc, res2);
-          } catch {}
-        }
-        setResult(acc);
       } catch (e: any) {
         Alert.alert('Analyze failed', e?.message || 'Unknown error');
       } finally {
