@@ -17,6 +17,10 @@ const appTheme: Theme = {
   colors: {
     ...DefaultTheme.colors,
     background: '#ffffff',
+    primary: '#444444',
+    text: '#222222',
+    card: '#ffffff',
+    border: '#e5e5e5',
   },
 };
 
@@ -24,7 +28,7 @@ export default function App() {
   return (
     <NavigationContainer theme={appTheme}>
       <StatusBar style="dark" />
-      <Tab.Navigator screenOptions={{ headerShown: true }}>
+      <Tab.Navigator screenOptions={{ headerShown: true, tabBarActiveTintColor: appTheme.colors.primary, tabBarInactiveTintColor: '#999999' }}>
         <Tab.Screen
           name="Home"
           component={HomeScreen}

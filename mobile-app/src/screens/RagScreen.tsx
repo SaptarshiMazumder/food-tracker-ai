@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import PrimaryButton from '../components/PrimaryButton';
 
 export default function RagScreen() {
   const [query, setQuery] = useState('');
@@ -19,7 +20,7 @@ export default function RagScreen() {
         onChangeText={setQuery}
         style={styles.input}
       />
-      <Button title="Ask" onPress={onAsk} />
+      <PrimaryButton title="Ask" onPress={onAsk} />
       <ScrollView style={styles.result} contentContainerStyle={{ paddingVertical: 8 }}>
         {result ? <Text>{result}</Text> : <Text style={{ color: '#888' }}>No results yet.</Text>}
       </ScrollView>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
+import PrimaryButton from '../components/PrimaryButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
@@ -165,7 +166,7 @@ export default function AnalyzeScreen() {
       {/* Removed explicit screen title per request */}
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
       <View style={styles.actions}>
-        <Button title="Upload Images" onPress={onUpload} disabled={loading} />
+        <PrimaryButton title="Upload Images" onPress={onUpload} disabled={loading} />
         <Text style={{ marginTop: 6, color: '#777' }}>
           In the picker, long-press then tap multiple items to multi-select.
         </Text>
@@ -180,10 +181,10 @@ export default function AnalyzeScreen() {
 
       <View style={styles.buttonRow}>
         <View style={styles.half}>
-          <Button title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"} onPress={onAnalyze} disabled={selectedUris.length === 0 || loading} />
+          <PrimaryButton title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"} onPress={onAnalyze} disabled={selectedUris.length === 0 || loading} />
         </View>
         <View style={styles.half}>
-          <Button title="Clear" onPress={() => {
+          <PrimaryButton title="Clear" onPress={() => {
             if (loading) return;
             setSelectedUris([]);
             setResult(null);
