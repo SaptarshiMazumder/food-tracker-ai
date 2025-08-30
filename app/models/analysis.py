@@ -72,9 +72,3 @@ class AnalysisRequest:
     enable_ab_test: bool = False
     enable_fallback: bool = False
 
-@dataclass
-class ABTestResult:
-    """A/B test result model"""
-    gemini: AnalysisResponse
-    winner: str  # 'logmeal', 'gemini', or 'tie'
-    comparison: Dict[str, Any]

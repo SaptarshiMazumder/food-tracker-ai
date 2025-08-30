@@ -9,7 +9,7 @@ from ..models.analysis import (
 )
 
 # Import external modules
-from ..services.pipeline.graph_llm_ingredients import run_pipeline
+from ..services.graph_llm_ingredients import run_pipeline
 from ..services.gemini.gemini_recognize import gemini_recognize_dish
 from ..services.gemini.gemini_ingredients import ingredients_from_image
 from ..services.gemini.gemini_calories import calories_from_ingredients
