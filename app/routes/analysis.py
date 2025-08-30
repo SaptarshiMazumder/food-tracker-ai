@@ -3,7 +3,7 @@ import os
 from flask import Blueprint, request, jsonify, Response, current_app
 from werkzeug.utils import secure_filename
 
-from ..services.analysis_service import AnalysisService
+from ..services.food_analysis.food_analysis_service import FoodAnalysisService
 from ..utils.helpers import (
     gather_images, save_uploads, load_job_paths, save_job_manifest, 
     persist_history
@@ -25,7 +25,7 @@ def analyze():
 
     model = request.form.get("model") or request.args.get("model") or current_app.config['DEFAULT_MODEL']
     
-    service = AnalysisService()
+    service = FoodAnalysisService()
     res = service.run_food_analysis(save_paths, model)
     
     if res.get("error"):
@@ -65,7 +65,7 @@ def analyze_sse():
 
     model = request.args.get("model") or current_app.config['DEFAULT_MODEL']
 
-    service = AnalysisService()
+    service = FoodAnalysisService()
     
     def event_stream():
         for event in service.stream_analysis(image_paths, model):
