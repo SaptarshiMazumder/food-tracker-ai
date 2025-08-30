@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadAnalyzeImage, AnalysisResponse } from '../services/api';
+import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 
 export default function AnalyzeScreen() {
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
@@ -61,8 +61,29 @@ export default function AnalyzeScreen() {
       try {
         setLoading(true);
         setResult(null);
-        const res = await uploadAnalyzeImage(selectedUri);
-        setResult(res);
+        // Streaming flow to match web behavior
+        const stream = await analyzeStream(selectedUri, { model: 'gemini-2.5-pro', useLogmeal: true });
+        const acc: any = {};
+        for await (const ev of stream) {
+          if (ev.phase === 'recognize') {
+            Object.assign(acc, ev.data);
+          } else if (ev.phase === 'ing_quant') {
+            Object.assign(acc, ev.data);
+          } else if (ev.phase === 'calories') {
+            Object.assign(acc, ev.data);
+          } else if (ev.phase === 'done') {
+            Object.assign(acc, ev.data);
+            break;
+          }
+        }
+        // Fallback to non-logmeal if portions look collapsed
+        if (!acc.items_grams || acc.items_grams.length <= 1) {
+          try {
+            const res2 = await uploadAnalyzeImage(selectedUri, { model: 'gemini-2.5-pro', useLogmeal: false });
+            Object.assign(acc, res2);
+          } catch {}
+        }
+        setResult(acc);
       } catch (e: any) {
         Alert.alert('Analyze failed', e?.message || 'Unknown error');
       } finally {

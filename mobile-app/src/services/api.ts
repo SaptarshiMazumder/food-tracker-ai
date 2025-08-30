@@ -1,3 +1,4 @@
+import RNEventSource from 'react-native-event-source';
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 const getBaseUrl = () => {
@@ -75,6 +76,64 @@ export async function uploadAnalyzeImage(uri: string, options?: { model?: string
     throw new Error(`HTTP ${res.status}: ${text}`);
   }
   return (await res.json()) as AnalysisResponse;
+}
+
+export type StreamEvent =
+  | { phase: 'recognize'; data: any }
+  | { phase: 'ing_quant'; data: any }
+  | { phase: 'calories'; data: any }
+  | { phase: 'done'; data: AnalysisResponse }
+  | { phase: 'error'; data: any };
+
+export async function analyzeStream(
+  uri: string,
+  opts: { model?: string; useLogmeal?: boolean } = {}
+): Promise<AsyncGenerator<StreamEvent, void, unknown>> {
+  const base = getBaseUrl();
+  const form = new FormData();
+  const filename = uri.split('/').pop() || 'image.jpg';
+  const ext = (filename.split('.').pop() || 'jpg').toLowerCase();
+  const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  form.append('image', { uri, name: filename, type: mime } as any);
+  form.append('model', opts.model || 'gemini-2.5-pro');
+  if (typeof opts.useLogmeal !== 'undefined') form.append('use_logmeal', String(opts.useLogmeal));
+
+  const uploadRes = await fetch(`${base}/upload`, { method: 'POST', body: form as any });
+  if (!uploadRes.ok) {
+    throw new Error(`Upload failed: ${uploadRes.status} ${await uploadRes.text()}`);
+  }
+  const { job_id } = (await uploadRes.json()) as { job_id: string };
+
+  const query = new URLSearchParams({ job_id, model: opts.model || 'gemini-2.5-pro' });
+  if (typeof opts.useLogmeal !== 'undefined') query.set('use_logmeal', String(opts.useLogmeal));
+  const url = `${base}/analyze_sse?${query.toString()}`;
+  const es = new RNEventSource(url);
+
+  async function* iterator() {
+    const queue: StreamEvent[] = [];
+    let done = false;
+    const push = (ev: StreamEvent) => queue.push(ev);
+
+    es.addEventListener('recognize', (e: any) => push({ phase: 'recognize', data: JSON.parse(e.data) }));
+    es.addEventListener('ing_quant', (e: any) => push({ phase: 'ing_quant', data: JSON.parse(e.data) }));
+    es.addEventListener('calories', (e: any) => push({ phase: 'calories', data: JSON.parse(e.data) }));
+    es.addEventListener('done', (e: any) => {
+      push({ phase: 'done', data: JSON.parse(e.data) });
+      done = true;
+      try { es.close(); } catch {}
+    });
+    es.addEventListener('error', (e: any) => push({ phase: 'error', data: e }));
+
+    while (!done || queue.length) {
+      if (queue.length) {
+        yield queue.shift() as StreamEvent;
+      } else {
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    }
+  }
+
+  return iterator();
 }
 
 
