@@ -3,11 +3,16 @@ import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, Scroll
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
+import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
+import Slider from '@react-native-community/slider';
 
 export default function AnalyzeScreen() {
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [uiItems, setUiItems] = useState<UiItem[]>([]);
+  const [grams, setGrams] = useState<number[]>([]);
+  const [totals, setTotals] = useState<UiTotals | null>(null);
 
   const pickWithDocumentPicker = async () => {
     try {
@@ -76,7 +81,13 @@ export default function AnalyzeScreen() {
             setResult({ ...(result || {}), ...acc });
           } else if (ev.phase === 'done') {
             Object.assign(acc, ev.data);
-            setResult({ ...(result || {}), ...acc });
+            const res = { ...(result || {}), ...acc } as AnalysisResponse;
+            setResult(res);
+            const ui = buildUiItems(res);
+            setUiItems(ui);
+            const baseGrams = ui.map((u) => u.baseGrams);
+            setGrams(baseGrams);
+            setTotals(computeTotals(ui, baseGrams));
             break;
           }
         }
@@ -139,6 +150,44 @@ export default function AnalyzeScreen() {
                   <Text>{it.grams} g</Text>
                 </View>
               ))}
+            </View>
+          ) : null}
+
+          {/* Adjust portions */}
+          {uiItems.length > 0 ? (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Adjust portions</Text>
+              {uiItems.map((u, i) => (
+                <View key={i} style={{ marginBottom: 12 }}>
+                  <View style={styles.rowBetween}>
+                    <Text>{u.name}</Text>
+                    <Text>{grams[i] ?? u.baseGrams} g</Text>
+                  </View>
+                  <Slider
+                    minimumValue={u.min}
+                    maximumValue={u.max}
+                    step={u.step}
+                    value={grams[i] ?? u.baseGrams}
+                    onValueChange={(val) => {
+                      const next = [...grams];
+                      next[i] = Math.round(val as number);
+                      setGrams(next);
+                      setTotals(computeTotals(uiItems, next));
+                    }}
+                  />
+                  <Text style={{ color: '#666' }}>
+                    kcal {(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)} • P {(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} • C {(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} • F {(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)}
+                  </Text>
+                </View>
+              ))}
+              {totals ? (
+                <View style={[styles.rowBetween, { marginTop: 8 }]}> 
+                  <Text style={{ fontWeight: '600' }}>Adjusted totals</Text>
+                  <Text style={{ fontWeight: '600' }}>
+                    {totals.grams} g • {totals.kcal} kcal • {totals.protein} g protein • {totals.carbs} g carbs • {totals.fat} g fat
+                  </Text>
+                </View>
+              ) : null}
             </View>
           ) : null}
 
