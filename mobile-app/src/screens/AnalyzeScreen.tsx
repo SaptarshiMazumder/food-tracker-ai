@@ -170,7 +170,8 @@ export default function AnalyzeScreen() {
           title="Upload Images"
           onPress={onUpload}
           disabled={loading}
-          style={{ backgroundColor: '#f2f2f2', borderWidth: 0 }}
+          style={{ backgroundColor: '#ff7a00', borderWidth: 0 }}
+          textStyle={{ color: '#ffffff' }}
           disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
           disabledTextStyle={{ color: '#999999' }}
         />
@@ -192,8 +193,8 @@ export default function AnalyzeScreen() {
             title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"}
             onPress={onAnalyze}
             disabled={selectedUris.length === 0 || loading}
-            style={{ backgroundColor: '#f2f2f2', borderWidth: 0 }}
-            textStyle={{ color: '#444444' }}
+            style={{ backgroundColor: '#ff7a00', borderWidth: 0 }}
+            textStyle={{ color: '#ffffff' }}
             disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
             disabledTextStyle={{ color: '#999999' }}
           />
@@ -359,6 +360,10 @@ export default function AnalyzeScreen() {
                     maximumValue={u.max}
                     step={u.step}
                     value={grams[i] ?? u.baseGrams}
+                    style={{ height: 36 }}
+                    minimumTrackTintColor="#ff7a00"
+                    maximumTrackTintColor="#dddddd"
+                    thumbTintColor="#ff7a00"
                     onValueChange={(val) => {
                       const next = [...grams];
                       next[i] = Math.round(val as number);

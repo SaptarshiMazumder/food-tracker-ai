@@ -17,7 +17,7 @@ const appTheme: Theme = {
   colors: {
     ...DefaultTheme.colors,
     background: '#ffffff',
-    primary: '#444444',
+    primary: '#ff7a00',
     text: '#222222',
     card: '#ffffff',
     border: '#e5e5e5',
