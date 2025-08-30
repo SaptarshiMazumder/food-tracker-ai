@@ -12,6 +12,11 @@ export default function AnalyzeScreen() {
   const [uiItems, setUiItems] = useState<UiItem[]>([]);
   const [grams, setGrams] = useState<number[]>([]);
   const [totals, setTotals] = useState<UiTotals | null>(null);
+  // Progressive flags similar to web UI
+  const [started, setStarted] = useState(false);
+  const [gotRecognize, setGotRecognize] = useState(false);
+  const [gotIngr, setGotIngr] = useState(false);
+  const [gotCalories, setGotCalories] = useState(false);
 
   const pickWithDocumentPicker = async (): Promise<string[]> => {
     try {
@@ -38,6 +43,10 @@ export default function AnalyzeScreen() {
     setGrams([]);
     setTotals(null);
     setLoading(false);
+    setStarted(false);
+    setGotRecognize(false);
+    setGotIngr(false);
+    setGotCalories(false);
 
     // Prefer Document Picker first (multi-select friendly)
     const docUris = await pickWithDocumentPicker();
@@ -53,32 +62,53 @@ export default function AnalyzeScreen() {
     if (selectedUris.length === 0) return;
     try {
       setLoading(true);
+      setStarted(true);
       setResult(null);
       setUiItems([]);
       setGrams([]);
       setTotals(null);
+      setGotRecognize(false);
+      setGotIngr(false);
+      setGotCalories(false);
       // Streaming flow exactly like web UI with Gemini only (no LogMeal)
       const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
       const acc: any = {};
       for await (const ev of stream) {
         if (ev.phase === 'recognize') {
           Object.assign(acc, ev.data);
-          setResult({ ...(result || {}), ...acc });
+          setGotRecognize(true);
+          setResult((prev) => ({ ...(prev || {}), ...acc }));
         } else if (ev.phase === 'ing_quant') {
           Object.assign(acc, ev.data);
-          setResult({ ...(result || {}), ...acc });
+          setGotIngr(true);
+          setResult((prev) => ({ ...(prev || {}), ...acc }));
         } else if (ev.phase === 'calories') {
           Object.assign(acc, ev.data);
-          setResult({ ...(result || {}), ...acc });
+          setGotCalories(true);
+          setResult((prev) => ({ ...(prev || {}), ...acc }));
+          // Build UI items as soon as calories arrive (if grams available)
+          const snapshot = { ...(result || {}), ...acc } as AnalysisResponse;
+          if (Array.isArray(snapshot.items_grams) && Array.isArray(snapshot.items_nutrition)) {
+            const ui = buildUiItems(snapshot);
+            setUiItems(ui);
+            const baseGrams = ui.map((u) => u.baseGrams);
+            setGrams(baseGrams);
+            setTotals(computeTotals(ui, baseGrams));
+          }
         } else if (ev.phase === 'done') {
           Object.assign(acc, ev.data);
-          const res = { ...(result || {}), ...acc } as AnalysisResponse;
-          setResult(res);
-          const ui = buildUiItems(res);
-          setUiItems(ui);
-          const baseGrams = ui.map((u) => u.baseGrams);
-          setGrams(baseGrams);
-          setTotals(computeTotals(ui, baseGrams));
+          setResult((prev) => {
+            const res = { ...(prev || {}), ...acc } as AnalysisResponse;
+            // Ensure UI items/totals are computed if not already
+            if (uiItems.length === 0 && Array.isArray(res.items_grams) && Array.isArray(res.items_nutrition)) {
+              const ui = buildUiItems(res);
+              setUiItems(ui);
+              const baseGrams = ui.map((u) => u.baseGrams);
+              setGrams(baseGrams);
+              setTotals(computeTotals(ui, baseGrams));
+            }
+            return res;
+          });
           break;
         }
       }
@@ -128,42 +158,55 @@ export default function AnalyzeScreen() {
       {loading ? (
         <View style={{ marginTop: 16 }}>
           <ActivityIndicator size="large" />
-          <Text style={{ marginTop: 8 }}>Analyzing...</Text>
+          <Text style={{ marginTop: 8 }}>Working… you'll see results step-by-step.</Text>
         </View>
       ) : null}
 
-      {!loading && result ? (
+      {started && (gotRecognize || gotIngr || gotCalories || (result && typeof result.total_ms === 'number')) ? (
         <View style={styles.result}>
           {/* 1. Recognize */}
-          {result.dish ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>1. Recognize</Text>
-              <Text style={styles.dishName}>{result.dish}</Text>
-              {typeof result.dish_confidence === 'number' ? (
-                <Text style={styles.badge}>Conf {result.dish_confidence.toFixed(2)}</Text>
-              ) : null}
-              {Array.isArray(result.ingredients_detected) && result.ingredients_detected.length > 0 ? (
-                <View style={styles.tagsWrap}>
-                  {result.ingredients_detected.map((tag: string, i: number) => (
-                    <Text key={i} style={styles.tag}>{tag}</Text>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ) : null}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>1. Recognize</Text>
+            {gotRecognize ? (
+              <>
+                {result?.dish ? <Text style={styles.dishName}>{result.dish}</Text> : null}
+                {typeof result?.dish_confidence === 'number' ? (
+                  <Text style={styles.badge}>Conf {result.dish_confidence.toFixed(2)}</Text>
+                ) : null}
+                {Array.isArray(result?.ingredients_detected) && result!.ingredients_detected!.length > 0 ? (
+                  <View style={styles.tagsWrap}>
+                    {result!.ingredients_detected!.map((tag: string, i: number) => (
+                      <Text key={i} style={styles.tag}>{tag}</Text>
+                    ))}
+                  </View>
+                ) : null}
+              </>
+            ) : (
+              <Text style={{ color: '#888' }}>working…</Text>
+            )}
+          </View>
 
           {/* 2. Portion (grams) */}
-          {Array.isArray(result.items_grams) && result.items_grams.length > 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>2. Portion (grams) {typeof result.total_grams === 'number' ? `(${result.total_grams} g total)` : ''}</Text>
-              {result.items_grams.map((it: { name: string; grams: number; note?: string }, i: number) => (
-                <View key={i} style={styles.rowBetween}>
-                  <Text>{it.name}</Text>
-                  <Text>{it.grams} g</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>2. Portion (grams) {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
+            {gotIngr ? (
+              Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
+                <>
+                  {result!.items_grams!.map((it: { name: string; grams: number; note?: string }, i: number) => (
+                    <View key={i} style={styles.rowBetween}>
+                      <Text>{it.name}</Text>
+                      <Text>{it.grams} g</Text>
+                    </View>
+                  ))}
+                  {typeof result?.grams_confidence === 'number' ? (
+                    <Text style={{ color: '#666' }}>confidence {result!.grams_confidence!.toFixed(2)}</Text>
+                  ) : null}
+                </>
+              ) : null
+            ) : (
+              <Text style={{ color: '#888' }}>estimating…</Text>
+            )}
+          </View>
 
           {/* Adjust portions */}
           {uiItems.length > 0 ? (
@@ -204,33 +247,37 @@ export default function AnalyzeScreen() {
           ) : null}
 
           {/* 3. Calories & Macros */}
-          {Array.isArray(result.items_nutrition) && result.items_nutrition.length > 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionTitle}>3. Calories & Macros</Text>
-              <View style={styles.grid4}>
-                <View style={styles.tile}><Text style={styles.tileTitle}>Total kcal</Text><Text style={styles.tileValue}>{result.total_kcal}</Text></View>
-                <View style={styles.tile}><Text style={styles.tileTitle}>Protein</Text><Text style={styles.tileValue}>{result.total_protein_g} g</Text></View>
-                <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result.total_carbs_g} g</Text></View>
-                <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result.total_fat_g} g</Text></View>
-              </View>
-              {result.notes ? <Text style={{ marginTop: 8 }}>{result.notes}</Text> : null}
-            </View>
-          ) : null}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>3. Calories & Macros</Text>
+            {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
+              <>
+                <View style={styles.grid4}>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Total kcal</Text><Text style={styles.tileValue}>{result!.total_kcal}</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Protein</Text><Text style={styles.tileValue}>{result!.total_protein_g} g</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result!.total_carbs_g} g</Text></View>
+                  <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result!.total_fat_g} g</Text></View>
+                </View>
+                {result!.notes ? <Text style={{ marginTop: 8 }}>{result!.notes}</Text> : null}
+              </>
+            ) : (
+              <Text style={{ color: '#888' }}>calculating…</Text>
+            )}
+          </View>
 
           {/* Timings */}
-          {result.timings ? (
+          {result?.timings ? (
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Processing time</Text>
-              {Object.entries(result.timings).map(([k, v]) => (
+              {Object.entries(result!.timings!).map(([k, v]) => (
                 <View style={styles.rowBetween} key={k}>
                   <Text>{k.replace('_', ' ')}</Text>
                   <Text>{v} ms</Text>
                 </View>
               ))}
-              {typeof result.total_ms === 'number' ? (
+              {typeof result!.total_ms === 'number' ? (
                 <View style={[styles.rowBetween, { marginTop: 6 }]}> 
                   <Text style={{ fontWeight: '600' }}>Total</Text>
-                  <Text style={{ fontWeight: '600' }}>{result.total_ms} ms</Text>
+                  <Text style={{ fontWeight: '600' }}>{result!.total_ms} ms</Text>
                 </View>
               ) : null}
             </View>
