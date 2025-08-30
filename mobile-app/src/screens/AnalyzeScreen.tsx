@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView, Animated } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
@@ -17,6 +17,42 @@ export default function AnalyzeScreen() {
   const [gotRecognize, setGotRecognize] = useState(false);
   const [gotIngr, setGotIngr] = useState(false);
   const [gotCalories, setGotCalories] = useState(false);
+
+  // Skeleton components for loading states
+  type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
+  const Skeleton = ({ width = '100%', height = 12, borderRadius = 6, style }: SkeletonProps) => {
+    const opacity = useRef(new Animated.Value(0.6)).current;
+    useEffect(() => {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0.6, duration: 800, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }, [opacity]);
+    return (
+      <Animated.View
+        style={[
+          { opacity, backgroundColor: '#eee', width, height, borderRadius },
+          style,
+        ]}
+      />
+    );
+  };
+
+  const SkeletonLine = (props: SkeletonProps) => <Skeleton {...props} />;
+  const SkeletonChip = ({ width = 60 }: { width?: number }) => (
+    <Skeleton width={width} height={20} borderRadius={999} style={{ marginRight: 6, marginBottom: 6 }} />
+  );
+  const SkeletonTile = () => (
+    <View style={styles.tile}>
+      <SkeletonLine width={'50%'} height={14} />
+      <View style={{ height: 6 }} />
+      <SkeletonLine width={'30%'} height={18} />
+    </View>
+  );
 
   const pickWithDocumentPicker = async (): Promise<string[]> => {
     try {
@@ -182,7 +218,14 @@ export default function AnalyzeScreen() {
                 ) : null}
               </>
             ) : (
-              <Text style={{ color: '#888' }}>working…</Text>
+              <>
+                <SkeletonLine width={'60%'} height={16} />
+                <View style={styles.tagsWrap}>
+                  <SkeletonChip width={70} />
+                  <SkeletonChip width={64} />
+                  <SkeletonChip width={88} />
+                </View>
+              </>
             )}
           </View>
 
@@ -200,7 +243,12 @@ export default function AnalyzeScreen() {
                 {result!.notes ? <Text style={{ marginTop: 8 }}>{result!.notes}</Text> : null}
               </>
             ) : (
-              <Text style={{ color: '#888' }}>calculating…</Text>
+              <View style={[styles.grid4, { width: '100%' }]}>
+                <SkeletonTile />
+                <SkeletonTile />
+                <SkeletonTile />
+                <SkeletonTile />
+              </View>
             )}
           </View>
 
@@ -222,7 +270,23 @@ export default function AnalyzeScreen() {
                 </>
               ) : null
             ) : (
-              <Text style={{ color: '#888' }}>estimating…</Text>
+              <>
+                <SkeletonLine width={'40%'} height={14} />
+                <View>
+                  <View style={styles.rowBetween}>
+                    <SkeletonLine width={'30%'} height={12} />
+                    <SkeletonLine width={'15%'} height={12} />
+                  </View>
+                  <View style={styles.rowBetween}>
+                    <SkeletonLine width={'28%'} height={12} />
+                    <SkeletonLine width={'12%'} height={12} />
+                  </View>
+                  <View style={styles.rowBetween}>
+                    <SkeletonLine width={'34%'} height={12} />
+                    <SkeletonLine width={'10%'} height={12} />
+                  </View>
+                </View>
+              </>
             )}
           </View>
 
