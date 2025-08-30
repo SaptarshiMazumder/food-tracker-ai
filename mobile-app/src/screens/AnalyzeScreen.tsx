@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
 import { Colors } from '../theme/colors';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
@@ -260,14 +261,43 @@ export default function AnalyzeScreen() {
 
           {/* 2. MACROS */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>2. MACROS</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.sectionTitle}>2. MACROS</Text>
+              {typeof result?.total_grams === 'number' ? (
+                <View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{result!.total_grams} g</Text></View>
+              ) : null}
+            </View>
             {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
               <>
                 <View style={styles.grid4}>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Calories</Text><Text style={styles.tileValue}>{result!.total_kcal}</Text></View>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Protein</Text><Text style={styles.tileValue}>{result!.total_protein_g} g</Text></View>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result!.total_carbs_g} g</Text></View>
-                  <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result!.total_fat_g} g</Text></View>
+                  <View style={styles.tile}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.tileTitle}>Calories</Text>
+                      <MaterialCommunityIcons name="fire" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                    </View>
+                    <Text style={styles.tileValue}>{result!.total_kcal}</Text>
+                  </View>
+                  <View style={styles.tile}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.tileTitle}>Protein</Text>
+                      <MaterialCommunityIcons name="dumbbell" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                    </View>
+                    <Text style={styles.tileValue}>{result!.total_protein_g} g</Text>
+                  </View>
+                  <View style={styles.tile}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.tileTitle}>Carbs</Text>
+                      <MaterialCommunityIcons name="bread-slice-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                    </View>
+                    <Text style={styles.tileValue}>{result!.total_carbs_g} g</Text>
+                  </View>
+                  <View style={styles.tile}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.tileTitle}>Fat</Text>
+                      <MaterialCommunityIcons name="water-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                    </View>
+                    <Text style={styles.tileValue}>{result!.total_fat_g} g</Text>
+                  </View>
                 </View>
                 {/* Removed description under macros per request */}
               </>
@@ -283,13 +313,8 @@ export default function AnalyzeScreen() {
 
           {/* 3. INGREDIENTS */}
           <View style={styles.card}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.sectionTitle}>3. INGREDIENTS</Text>
-              {gotIngr && typeof result?.total_grams === 'number' ? (
-                <View style={styles.accentBubble}>
-                  <Text style={styles.accentBubbleText}>{result!.total_grams} g total</Text>
-                </View>
-              ) : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={styles.sectionTitle}>3. INGREDIENTS PORTIONS</Text>
             </View>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
@@ -530,6 +555,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
+    transform: [{ translateY: -3 }],
   },
   accentBubbleText: {
     color: Colors.accentText,
@@ -540,10 +566,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
+    transform: [{ translateY: -1 }],
   },
   neutralBubbleText: {
     color: Colors.neutralText,
     fontWeight: '400',
+  },
+  iconAlignUp: {
+    transform: [{ translateY: -1 }],
   },
   rowBetween: {
     flexDirection: 'row',
