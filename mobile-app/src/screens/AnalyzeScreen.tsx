@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, Button, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
@@ -200,15 +200,12 @@ export default function AnalyzeScreen() {
 
       {started && (gotRecognize || gotIngr || gotCalories || (result && typeof result.total_ms === 'number')) ? (
         <View style={styles.result}>
-          {/* 1. Recognize */}
+          {/* 1. FOOD */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>1. Recognize</Text>
+            <Text style={styles.sectionTitle}>1. FOOD</Text>
             {gotRecognize ? (
               <>
                 {result?.dish ? <Text style={styles.dishName}>{result.dish}</Text> : null}
-                {typeof result?.dish_confidence === 'number' ? (
-                  <Text style={styles.badge}>Confidence {(result.dish_confidence * 100).toFixed(0)}%</Text>
-                ) : null}
                 {Array.isArray(result?.ingredients_detected) && result!.ingredients_detected!.length > 0 ? (
                   <View style={styles.tagsWrap}>
                     {result!.ingredients_detected!.map((tag: string, i: number) => (
@@ -229,9 +226,9 @@ export default function AnalyzeScreen() {
             )}
           </View>
 
-          {/* 2. Macros */}
+          {/* 2. MACROS */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>2. Macros</Text>
+            <Text style={styles.sectionTitle}>2. MACROS</Text>
             {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
               <>
                 <View style={styles.grid4}>
@@ -240,7 +237,7 @@ export default function AnalyzeScreen() {
                   <View style={styles.tile}><Text style={styles.tileTitle}>Carbs</Text><Text style={styles.tileValue}>{result!.total_carbs_g} g</Text></View>
                   <View style={styles.tile}><Text style={styles.tileTitle}>Fat</Text><Text style={styles.tileValue}>{result!.total_fat_g} g</Text></View>
                 </View>
-                {result!.notes ? <Text style={{ marginTop: 8 }}>{result!.notes}</Text> : null}
+                {/* Removed description under macros per request */}
               </>
             ) : (
               <View style={[styles.grid4, { width: '100%' }]}>
@@ -252,9 +249,9 @@ export default function AnalyzeScreen() {
             )}
           </View>
 
-          {/* 3. Portion (grams) */}
+          {/* 3. INGREDIENTS */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>3. Portion (g) {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
+            <Text style={styles.sectionTitle}>3. INGREDIENTS {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
                 <>
@@ -264,9 +261,6 @@ export default function AnalyzeScreen() {
                       <Text>{it.grams} g</Text>
                     </View>
                   ))}
-                  {typeof result?.grams_confidence === 'number' ? (
-                    <Text style={{ color: '#666' }}>Confidence {(result!.grams_confidence! * 100).toFixed(0)}%</Text>
-                  ) : null}
                 </>
               ) : null
             ) : (
@@ -293,13 +287,40 @@ export default function AnalyzeScreen() {
           {/* Adjust portions */}
           {uiItems.length > 0 ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Adjust portions</Text>
+              <Text style={styles.sectionTitle}>ADJUST PORTIONS</Text>
               {uiItems.map((u, i) => (
                 <View key={i} style={{ marginBottom: 12 }}>
                   <View style={styles.rowBetween}>
-                    <Text>{u.name}</Text>
-                    <Text>{grams[i] ?? u.baseGrams} g</Text>
+                    <Text style={styles.ingName}>{u.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <TextInput
+                        style={styles.gramsInput}
+                        keyboardType="numeric"
+                        value={String(grams[i] ?? u.baseGrams)}
+                        onChangeText={(txt) => {
+                          const n = parseInt(txt || '0', 10);
+                          const clamped = isNaN(n) ? 0 : Math.max(u.min, Math.min(u.max, n));
+                          const next = [...grams];
+                          next[i] = clamped;
+                          setGrams(next);
+                          setTotals(computeTotals(uiItems, next));
+                        }}
+                      />
+                      <Text>g</Text>
+                      <Button
+                        title="Reset"
+                        onPress={() => {
+                          const next = [...grams];
+                          next[i] = u.baseGrams;
+                          setGrams(next);
+                          setTotals(computeTotals(uiItems, next));
+                        }}
+                      />
+                    </View>
                   </View>
+                  {u.note ? (
+                    <Text style={styles.noteText}>{u.note}</Text>
+                  ) : null}
                   <Slider
                     minimumValue={u.min}
                     maximumValue={u.max}
@@ -312,8 +333,8 @@ export default function AnalyzeScreen() {
                       setTotals(computeTotals(uiItems, next));
                     }}
                   />
-                  <Text style={{ color: '#666' }}>
-                    kcal {(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)} • P {(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} • C {(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} • F {(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)}
+                  <Text style={styles.macroStrip}>
+                    Cals {(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)} • P {(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g • C {(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g • F {(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g
                   </Text>
                 </View>
               ))}
@@ -330,20 +351,20 @@ export default function AnalyzeScreen() {
 
           
 
-          {/* Timings */}
+          {/* TIMINGS */}
           {result?.timings ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Processing time</Text>
+              <Text style={styles.sectionTitle}>TIMINGS</Text>
               {Object.entries(result!.timings!).map(([k, v]) => (
                 <View style={styles.rowBetween} key={k}>
-                  <Text>{k.replace('_', ' ')}</Text>
-                  <Text>{v} ms</Text>
+                  <Text style={styles.timingLabel}>{k.replace('_', ' ')}</Text>
+                  <Text style={styles.timingValue}>{(Number(v) / 1000).toFixed(2)} s</Text>
                 </View>
               ))}
               {typeof result!.total_ms === 'number' ? (
                 <View style={[styles.rowBetween, { marginTop: 6 }]}> 
-                  <Text style={{ fontWeight: '600' }}>Total</Text>
-                  <Text style={{ fontWeight: '600' }}>{result!.total_ms} ms</Text>
+                  <Text style={styles.timingLabelBold}>Total</Text>
+                  <Text style={styles.timingValueBold}>{(result!.total_ms / 1000).toFixed(2)} s</Text>
                 </View>
               ) : null}
             </View>
@@ -410,13 +431,16 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
+    color: '#666',
+    letterSpacing: 1,
   },
   dishName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: '#333',
   },
   badge: {
     marginTop: 4,
@@ -485,5 +509,41 @@ const styles = StyleSheet.create({
   totalsLine: {
     fontWeight: '600',
     flexWrap: 'wrap',
+  },
+  noteText: {
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  gramsInput: {
+    minWidth: 64,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    color: '#333',
+  },
+  macroStrip: {
+    color: '#666',
+  },
+  ingName: {
+    color: '#444',
+    fontWeight: '500',
+  },
+  timingLabel: {
+    color: '#666',
+  },
+  timingValue: {
+    color: '#333',
+    fontWeight: '500',
+  },
+  timingLabelBold: {
+    color: '#444',
+    fontWeight: '600',
+  },
+  timingValueBold: {
+    color: '#111',
+    fontWeight: '700',
   },
 });
