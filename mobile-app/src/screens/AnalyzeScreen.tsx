@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
+import { Colors } from '../theme/colors';
 import PrimaryButton from '../components/PrimaryButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
@@ -282,14 +283,21 @@ export default function AnalyzeScreen() {
 
           {/* 3. INGREDIENTS */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>3. INGREDIENTS {gotIngr && typeof result?.total_grams === 'number' ? `(${result!.total_grams} g total)` : ''}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.sectionTitle}>3. INGREDIENTS</Text>
+              {gotIngr && typeof result?.total_grams === 'number' ? (
+                <View style={styles.accentBubble}>
+                  <Text style={styles.accentBubbleText}>{result!.total_grams} g total</Text>
+                </View>
+              ) : null}
+            </View>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
                 <>
                   {result!.items_grams!.map((it: { name: string; grams: number; note?: string }, i: number) => (
                     <View key={i} style={styles.rowBetween}>
                       <Text>{it.name}</Text>
-                      <Text>{it.grams} g</Text>
+                      <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>{it.grams} g</Text></View>
                     </View>
                   ))}
                 </>
@@ -361,9 +369,9 @@ export default function AnalyzeScreen() {
                     step={u.step}
                     value={grams[i] ?? u.baseGrams}
                     style={{ height: 36 }}
-                    minimumTrackTintColor="#ff7a00"
-                    maximumTrackTintColor="#dddddd"
-                    thumbTintColor="#ff7a00"
+                    minimumTrackTintColor={Colors.sliderActive}
+                    maximumTrackTintColor={Colors.sliderInactive}
+                    thumbTintColor={Colors.sliderActive}
                     onValueChange={(val) => {
                       const next = [...grams];
                       next[i] = Math.round(val as number);
@@ -401,7 +409,7 @@ export default function AnalyzeScreen() {
           {/* processing time */}
           {result?.timings ? (
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>processing time</Text>
+              <Text style={styles.sectionTitle}>PROCESSING TIME</Text>
               {Object.entries(result!.timings!).map(([k, v]) => {
                 let label = k.replace('_', ' ');
                 if (k === 'recognize_ms') label = 'identify food';
@@ -410,14 +418,14 @@ export default function AnalyzeScreen() {
                 return (
                   <View style={styles.rowBetween} key={k}>
                     <Text style={styles.timingLabel}>{label}</Text>
-                    <Text style={styles.timingValue}>{(Number(v) / 1000).toFixed(2)} s</Text>
+                    <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>{(Number(v) / 1000).toFixed(2)} s</Text></View>
                   </View>
                 );
               })}
               {typeof result!.total_ms === 'number' ? (
                 <View style={[styles.rowBetween, { marginTop: 6 }]}> 
                   <Text style={styles.timingLabelBold}>Total</Text>
-                  <Text style={styles.timingValueBold}>{(result!.total_ms / 1000).toFixed(2)} s</Text>
+                  <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>{(result!.total_ms / 1000).toFixed(2)} s</Text></View>
                 </View>
               ) : null}
             </View>
@@ -511,10 +519,31 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   tag: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.accentSurface,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
+    color: Colors.accentText,
+  },
+  accentBubble: {
+    backgroundColor: Colors.accentSurface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  accentBubbleText: {
+    color: Colors.accentText,
+    fontWeight: '400',
+  },
+  neutralBubble: {
+    backgroundColor: Colors.neutralSurface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  neutralBubbleText: {
+    color: Colors.neutralText,
+    fontWeight: '400',
   },
   rowBetween: {
     flexDirection: 'row',
@@ -616,8 +645,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   ingName: {
-    color: '#444',
-    fontWeight: '500',
+    color: '#111111',
+    fontWeight: '400',
   },
   timingLabel: {
     color: '#666',

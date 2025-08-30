@@ -9,6 +9,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import AnalyzeScreen from './src/screens/AnalyzeScreen';
 import MealsScreen from './src/screens/MealsScreen';
 import RagScreen from './src/screens/RagScreen';
+import { Colors } from './src/theme/colors';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,11 +17,11 @@ const appTheme: Theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#ffffff',
-    primary: '#ff7a00',
-    text: '#222222',
-    card: '#ffffff',
-    border: '#e5e5e5',
+    background: Colors.background,
+    primary: Colors.primary,
+    text: Colors.text,
+    card: Colors.card,
+    border: Colors.border,
   },
 };
 
