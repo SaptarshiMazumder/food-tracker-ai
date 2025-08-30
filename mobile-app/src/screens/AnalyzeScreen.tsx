@@ -2,11 +2,58 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
 import { Colors } from '../theme/colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
 import Slider from '@react-native-community/slider';
+
+type CircularProgressProps = {
+  size: number;
+  trackWidth?: number;
+  progressWidth?: number;
+  progress: number; // 0..1
+  trackColor?: string;
+  progressColor?: string;
+  trackOpacity?: number;
+  progressOpacity?: number;
+};
+
+function CircularProgress({ size, trackWidth = 4, progressWidth = 7, progress, trackColor = Colors.sliderInactive, progressColor = Colors.primary, trackOpacity = 0.5, progressOpacity = 1 }: CircularProgressProps) {
+  const clamped = Math.max(0, Math.min(1, progress || 0));
+  const maxStroke = Math.max(trackWidth, progressWidth);
+  const radius = (size - maxStroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - clamped);
+  const center = size / 2;
+  return (
+    <Svg width={size} height={size}>
+      <Circle
+        cx={center}
+        cy={center}
+        r={radius}
+        stroke={trackColor}
+        strokeOpacity={trackOpacity}
+        strokeWidth={trackWidth}
+        fill="none"
+      />
+      <Circle
+        cx={center}
+        cy={center}
+        r={radius}
+        stroke={progressColor}
+        strokeOpacity={progressOpacity}
+        strokeWidth={progressWidth}
+        strokeDasharray={`${circumference} ${circumference}`}
+        strokeDashoffset={dashOffset}
+        strokeLinecap="round"
+        fill="none"
+        transform={`rotate(-90 ${center} ${center})`}
+      />
+    </Svg>
+  );
+}
 
 export default function AnalyzeScreen() {
   const [selectedUris, setSelectedUris] = useState<string[]>([]);
@@ -167,15 +214,19 @@ export default function AnalyzeScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Removed explicit screen title per request */}
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
+      {/* Compute macro percentages for rings */}
+      {(() => {
+        return null;
+      })()}
       <View style={styles.actions}>
         <PrimaryButton
           title="Upload Images"
           onPress={onUpload}
           disabled={loading}
-          style={{ backgroundColor: '#ff7a00', borderWidth: 0 }}
+          style={{ backgroundColor: Colors.primary, borderWidth: 0 }}
           textStyle={{ color: '#ffffff' }}
-          disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
-          disabledTextStyle={{ color: '#999999' }}
+          disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
+          disabledTextStyle={{ color: Colors.neutralText }}
         />
         <Text style={{ marginTop: 6, color: '#777' }}>
           In the picker, long-press then tap multiple items to multi-select.
@@ -269,36 +320,68 @@ export default function AnalyzeScreen() {
             </View>
             {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
               <>
-                <View style={styles.grid4}>
-                  <View style={styles.tile}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.tileTitle}>Calories</Text>
-                      <MaterialCommunityIcons name="fire" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                {(() => {
+                  const totalG = typeof result?.total_grams === 'number' && result!.total_grams > 0 ? result!.total_grams : 0;
+                  const p = totalG > 0 && typeof result?.total_protein_g === 'number' ? result!.total_protein_g / totalG : 0;
+                  const c = totalG > 0 && typeof result?.total_carbs_g === 'number' ? result!.total_carbs_g / totalG : 0;
+                  const f = totalG > 0 && typeof result?.total_fat_g === 'number' ? result!.total_fat_g / totalG : 0;
+                  return (
+                    <View style={styles.grid4}>
+                      <View style={styles.tile}>
+                        {/* Center ring overlay if needed (not for calories) */}
+                        <View style={styles.rowBetween}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={styles.tileTitle}>Calories</Text>
+                            <MaterialCommunityIcons name="fire" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                          </View>
+                        </View>
+                        <Text style={styles.tileValue}>{result!.total_kcal}</Text>
+                      </View>
+                      <View style={styles.tile}>
+                        <View style={styles.ringRightOverlay} pointerEvents="none">
+                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={p} trackOpacity={0.35} />
+                        </View>
+                        <View style={styles.ringedContent}>
+                          <View style={styles.rowBetween}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Text style={styles.tileTitle}>Protein</Text>
+                              <MaterialCommunityIcons name="dumbbell" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                            </View>
+                          </View>
+                          <Text style={styles.tileValue}>{result!.total_protein_g} g</Text>
+                        </View>
+                      </View>
+                      <View style={styles.tile}>
+                        <View style={styles.ringRightOverlay} pointerEvents="none">
+                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={c} trackOpacity={0.35} />
+                        </View>
+                        <View style={styles.ringedContent}>
+                          <View style={styles.rowBetween}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Text style={styles.tileTitle}>Carbs</Text>
+                              <MaterialCommunityIcons name="bread-slice-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                            </View>
+                          </View>
+                          <Text style={styles.tileValue}>{result!.total_carbs_g} g</Text>
+                        </View>
+                      </View>
+                      <View style={styles.tile}>
+                        <View style={styles.ringRightOverlay} pointerEvents="none">
+                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={f} trackOpacity={0.35} />
+                        </View>
+                        <View style={styles.ringedContent}>
+                          <View style={styles.rowBetween}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Text style={styles.tileTitle}>Fat</Text>
+                              <MaterialCommunityIcons name="water-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                            </View>
+                          </View>
+                          <Text style={styles.tileValue}>{result!.total_fat_g} g</Text>
+                        </View>
+                      </View>
                     </View>
-                    <Text style={styles.tileValue}>{result!.total_kcal}</Text>
-                  </View>
-                  <View style={styles.tile}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.tileTitle}>Protein</Text>
-                      <MaterialCommunityIcons name="dumbbell" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
-                    </View>
-                    <Text style={styles.tileValue}>{result!.total_protein_g} g</Text>
-                  </View>
-                  <View style={styles.tile}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.tileTitle}>Carbs</Text>
-                      <MaterialCommunityIcons name="bread-slice-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
-                    </View>
-                    <Text style={styles.tileValue}>{result!.total_carbs_g} g</Text>
-                  </View>
-                  <View style={styles.tile}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.tileTitle}>Fat</Text>
-                      <MaterialCommunityIcons name="water-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
-                    </View>
-                    <Text style={styles.tileValue}>{result!.total_fat_g} g</Text>
-                  </View>
-                </View>
+                  );
+                })()}
                 {/* Removed description under macros per request */}
               </>
             ) : (
@@ -574,6 +657,27 @@ const styles = StyleSheet.create({
   },
   iconAlignUp: {
     transform: [{ translateY: -1 }],
+  },
+  ringOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringRightOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 6,
+    width: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringedContent: {
+    paddingRight: 72,
   },
   rowBetween: {
     flexDirection: 'row',
