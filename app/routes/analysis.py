@@ -26,7 +26,7 @@ def analyze():
     model = request.form.get("model") or request.args.get("model") or current_app.config['DEFAULT_MODEL']
     
     service = AnalysisService()
-    res = service.run_full_analysis(save_paths, model)
+    res = service.run_food_analysis(save_paths, model)
     
     if res.get("error"):
         return jsonify({"error": res["error"], "dish": res.get("dish")}), 400

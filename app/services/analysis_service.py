@@ -9,7 +9,7 @@ from ..models.analysis import (
 )
 
 # Import external modules
-from ..services.graph_llm_ingredients import run_pipeline
+from ..services.graphs import run_food_analysis
 from ..services.gemini.gemini_recognize import gemini_recognize_dish
 from ..services.gemini.gemini_ingredients import ingredients_from_image
 from ..services.gemini.gemini_calories import calories_from_ingredients
@@ -22,16 +22,16 @@ class AnalysisService:
         self.location = current_app.config['GOOGLE_CLOUD_LOCATION']
         self.default_model = current_app.config['DEFAULT_MODEL']
     
-    def run_full_analysis(self, image_paths: List[str], model: str) -> Dict[str, Any]:
-        """Run complete analysis pipeline"""
+    def run_food_analysis(self, image_paths: List[str], model: str) -> Dict[str, Any]:
+        """Run complete food analysis workflow"""
         try:
-            res = run_pipeline(image_paths, self.project, self.location, model)
+            res = run_food_analysis(image_paths, self.project, self.location, model)
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
-            print(f"[ERROR] Pipeline exception: {str(e)}")
+            print(f"[ERROR] Food analysis exception: {str(e)}")
             print(f"[ERROR] Full traceback: {error_details}")
-            return {"error": "pipeline_exception", "msg": str(e), "details": error_details}
+            return {"error": "food_analysis_exception", "msg": str(e), "details": error_details}
         
         if res.get("error"):
             return {"error": res["error"], "dish": res.get("dish")}
