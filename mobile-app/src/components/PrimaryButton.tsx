@@ -7,17 +7,19 @@ type PrimaryButtonProps = {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  disabledStyle?: ViewStyle;
+  disabledTextStyle?: TextStyle;
 };
 
-export default function PrimaryButton({ title, onPress, disabled, style, textStyle }: PrimaryButtonProps) {
+export default function PrimaryButton({ title, onPress, disabled, style, textStyle, disabledStyle, disabledTextStyle }: PrimaryButtonProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
       disabled={disabled}
-      style={[styles.button, disabled ? styles.buttonDisabled : undefined, style]}
+      style={[styles.button, style, disabled ? [styles.buttonDisabled, disabledStyle] : undefined]}
     >
-      <Text style={[styles.text, textStyle]}>{title}</Text>
+      <Text style={[styles.text, textStyle, disabled ? disabledTextStyle : undefined]}>{title}</Text>
     </TouchableOpacity>
   );
 }

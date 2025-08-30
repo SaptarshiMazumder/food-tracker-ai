@@ -166,7 +166,14 @@ export default function AnalyzeScreen() {
       {/* Removed explicit screen title per request */}
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
       <View style={styles.actions}>
-        <PrimaryButton title="Upload Images" onPress={onUpload} disabled={loading} />
+        <PrimaryButton
+          title="Upload Images"
+          onPress={onUpload}
+          disabled={loading}
+          style={{ backgroundColor: '#f2f2f2', borderWidth: 0 }}
+          disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
+          disabledTextStyle={{ color: '#999999' }}
+        />
         <Text style={{ marginTop: 6, color: '#777' }}>
           In the picker, long-press then tap multiple items to multi-select.
         </Text>
@@ -181,7 +188,15 @@ export default function AnalyzeScreen() {
 
       <View style={styles.buttonRow}>
         <View style={styles.half}>
-          <PrimaryButton title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"} onPress={onAnalyze} disabled={selectedUris.length === 0 || loading} />
+          <PrimaryButton
+            title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"}
+            onPress={onAnalyze}
+            disabled={selectedUris.length === 0 || loading}
+            style={{ backgroundColor: '#f2f2f2', borderWidth: 0 }}
+            textStyle={{ color: '#444444' }}
+            disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
+            disabledTextStyle={{ color: '#999999' }}
+          />
         </View>
         <View style={styles.half}>
           <PrimaryButton title="Clear" onPress={() => {
@@ -197,7 +212,12 @@ export default function AnalyzeScreen() {
             setGotCalories(false);
             setLoading(false);
             setHasAnalyzed(false);
-          }} disabled={selectedUris.length === 0 || loading} />
+          }} disabled={selectedUris.length === 0 || loading}
+            style={{ backgroundColor: '#f2f2f2', borderWidth: 0 }}
+            textStyle={{ color: '#444444' }}
+            disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
+            disabledTextStyle={{ color: '#999999' }}
+          />
         </View>
       </View>
 
