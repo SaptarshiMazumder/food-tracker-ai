@@ -27,7 +27,11 @@ class AnalysisService:
         try:
             res = run_pipeline(image_paths, self.project, self.location, model, use_logmeal)
         except Exception as e:
-            return {"error": "pipeline_exception", "msg": str(e)}
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"[ERROR] Pipeline exception: {str(e)}")
+            print(f"[ERROR] Full traceback: {error_details}")
+            return {"error": "pipeline_exception", "msg": str(e), "details": error_details}
         
         if res.get("error"):
             return {"error": res["error"], "dish": res.get("dish")}

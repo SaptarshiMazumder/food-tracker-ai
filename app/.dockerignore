@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+
+# Venvs
+.venv/
+venv/
+
+# Git
+.git
+.gitignore
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
+# App-specific
+uploads/
+cache/
+frontend/node_modules
+frontend/.next
+dist/
+build/
