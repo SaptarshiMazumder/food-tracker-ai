@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Colors } from '../theme/colors';
+import Card from '../components/Card';
 import { mealLogger, LoggedMeal, DailyMealLog } from '../services/mealLogger';
 import { MaterialIcons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -170,7 +171,7 @@ export default function LogScreen() {
         <View style={styles.searchResults}>
           <Text style={styles.sectionTitle}>Search Results</Text>
           {searchResults.map((meal) => (
-            <View key={meal.id} style={[styles.card, styles.searchCard]}>
+            <Card key={meal.id} style={styles.searchCard}>
               <View style={styles.rowBetween}>
                 <View>
                   <Text style={styles.mealTitle}>{meal.dish || 'Meal'}</Text>
@@ -186,13 +187,13 @@ export default function LogScreen() {
                   <Text style={styles.btnTextPrimary}>Add to Today</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Card>
           ))}
         </View>
       ) : null}
 
       {/* Daily Log */}
-      <View style={styles.daily}>
+      <Card style={styles.daily}>
         <View style={styles.dailyHeader}>
           <Text style={styles.dailyTitle}>{formatDateNice(log.date)}</Text>
           {log.meals.length > 0 ? (
@@ -206,8 +207,8 @@ export default function LogScreen() {
         </View>
         {log.meals.length > 0 ? (
           <View style={{ padding: 12 }}>
-            {log.meals.map((m) => (
-              <View key={m.id} style={styles.card}>
+            {log.meals.map((m, idx) => (
+              <View key={m.id} style={styles.itemContainer}>
                 <TouchableOpacity onPress={() => toggle(m.id)} style={styles.rowBetween}>
                   <View style={{ flex: 1 }}>
                     <View style={styles.rowBetween}>
@@ -257,6 +258,7 @@ export default function LogScreen() {
                     </View>
                   </View>
                 ) : null}
+                {idx < log.meals.length - 1 ? <View style={styles.separator} /> : null}
               </View>
             ))}
           </View>
@@ -266,7 +268,7 @@ export default function LogScreen() {
             <Text style={{ color: '#999' }}>Analyze some food to start logging your meals!</Text>
           </View>
         )}
-      </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -307,15 +309,15 @@ const styles = StyleSheet.create({
   mealMeta: { fontSize: 12, color: '#666' },
   kcal: { color: '#e91e63', fontWeight: '600' },
   grams: { color: '#666' },
-  daily: { margin: 16, borderWidth: 1, borderColor: '#e9ecef', borderRadius: 8, overflow: 'hidden' },
+  daily: { margin: 16 },
   dailyHeader: { backgroundColor: 'transparent', padding: 12, borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
   dailyTitle: { fontSize: 20, fontWeight: '600' },
-  totalsRow: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  totalItem: { minWidth: 72, alignItems: 'center' },
-  totalLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
-  totalValue: { fontSize: 18, fontWeight: '600', color: '#333' },
-  accentBubble: { backgroundColor: Colors.accentSurface, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, marginTop: 4 },
-  accentBubbleText: { color: Colors.accentText, fontWeight: '400' },
+  totalsRow: { marginTop: 6, flexDirection: 'row', flexWrap: 'nowrap', justifyContent: 'space-between', gap: 8 },
+  totalItem: { alignItems: 'center' },
+  totalLabel: { fontSize: 10, color: '#666', textTransform: 'uppercase' },
+  totalValue: { fontSize: 16, fontWeight: '600', color: '#333' },
+  accentBubble: { backgroundColor: Colors.accentSurface, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, marginTop: 2 },
+  accentBubbleText: { color: Colors.accentText, fontWeight: '400', fontSize: 12 },
   quickStats: { flexDirection: 'row', gap: 12, marginTop: 4 },
   protein: { color: '#4caf50', fontWeight: '600' },
   time: { color: Colors.primary },
@@ -330,6 +332,8 @@ const styles = StyleSheet.create({
   ingredientChip: { backgroundColor: '#e9ecef', color: '#495057', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontSize: 11 },
   notesLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
   notesText: { fontSize: 14, color: '#666', fontStyle: 'italic' },
+  itemContainer: { paddingVertical: 10 },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#e9ecef', marginVertical: 10 },
 });
 
 

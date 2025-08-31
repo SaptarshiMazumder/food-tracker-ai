@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
+import Card from '../components/Card';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
 import { mealLogger } from '../services/mealLogger';
@@ -307,7 +308,7 @@ export default function AnalyzeScreen() {
       {started ? (
         <View style={styles.result}>
           {/* 1. FOOD */}
-          <View style={styles.card}>
+          <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={styles.sectionTitle}>1. FOOD</Text>
               <Ionicons name="fast-food-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
@@ -333,10 +334,10 @@ export default function AnalyzeScreen() {
                 </View>
               </>
             )}
-          </View>
+          </Card>
 
           {/* 2. MACROS */}
-          <View style={styles.card}>
+          <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.sectionTitle}>2. MACROS</Text>
@@ -420,10 +421,10 @@ export default function AnalyzeScreen() {
                 <SkeletonTile />
               </View>
             )}
-          </View>
+          </Card>
 
           {/* 3. INGREDIENTS */}
-          <View style={styles.card}>
+          <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.sectionTitle}>3. INGREDIENTS PORTIONS</Text>
@@ -460,11 +461,11 @@ export default function AnalyzeScreen() {
                 </View>
               </>
             )}
-          </View>
+          </Card>
 
           {/* Adjust portions */}
           {uiItems.length > 0 ? (
-            <View style={styles.card}>
+            <Card>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.sectionTitle}>ADJUST PORTIONS</Text>
                 <Ionicons name="create-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
@@ -543,14 +544,14 @@ export default function AnalyzeScreen() {
                   </View>
                 </View>
               ) : null}
-            </View>
+            </Card>
           ) : null}
 
           
 
           {/* processing time */}
           {result?.timings ? (
-            <View style={styles.card}>
+            <Card>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.sectionTitle}>PROCESSING TIME</Text>
                 <Ionicons name="time-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
@@ -573,7 +574,7 @@ export default function AnalyzeScreen() {
                   <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>{(result!.total_ms / 1000).toFixed(2)} s</Text></View>
                 </View>
               ) : null}
-            </View>
+            </Card>
           ) : null}
         </View>
       ) : null}
