@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, render_template_string, request
 from werkzeug.exceptions import BadRequest
-from app.services.gemini.gemini_healthscore import score_with_gemini
+from app.services.graphs.health_score import run_health_score
 
 health_bp = Blueprint('health', __name__)
 
@@ -36,7 +36,7 @@ def health_score():
         raise BadRequest("JSON body required")
 
     try:
-        result = score_with_gemini(body)
+        result = run_health_score(body)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": "health_score_failed", "message": str(e)}), 500
