@@ -25,7 +25,7 @@ function formatTime(ts: string): string {
 }
 
 export default function LogScreen() {
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(formatYMD(new Date()));
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [log, setLog] = useState<DailyMealLog>(() => mealLogger.getDailyMealLog(selectedDate));
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -50,11 +50,11 @@ export default function LogScreen() {
 
   const weekDays = useMemo(() => {
     const days: Array<{ date: Date; dateString: string; dayName: string; isToday: boolean; isSelected: boolean; }> = [];
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = formatYMD(new Date());
     for (let i = 0; i < 7; i++) {
       const d = new Date(currentWeekStart);
       d.setDate(currentWeekStart.getDate() + i);
-      const ds = d.toISOString().split('T')[0];
+      const ds = formatYMD(d);
       const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
       const isToday = ds === todayStr;
       const isSelected = ds === selectedDate;
@@ -98,7 +98,7 @@ export default function LogScreen() {
   function previousWeek() { setCurrentWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() - 7); return startOfWeek(d); }); }
   function nextWeek() { setCurrentWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() + 7); return startOfWeek(d); }); }
   function goToday() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatYMD(new Date());
     setSelectedDate(today);
     setCurrentWeekStart(startOfWeek(new Date()));
   }

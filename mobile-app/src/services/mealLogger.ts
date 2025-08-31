@@ -109,8 +109,15 @@ class MealLogger {
     return this.meals.filter((m) => m.date === date).sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
   }
 
+  private formatYMD(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   getTodaysMeals(): LoggedMeal[] {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.formatYMD(new Date());
     return this.getMealsForDate(today);
   }
 
@@ -124,7 +131,7 @@ class MealLogger {
   }
 
   getTodaysMealLog(): DailyMealLog {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.formatYMD(new Date());
     return this.getDailyMealLog(today);
   }
 
@@ -152,7 +159,7 @@ class MealLogger {
   ): LoggedMeal {
     const meal: LoggedMeal = {
       id: this.generateId(),
-      date: new Date().toISOString().split('T')[0],
+      date: this.formatYMD(new Date()),
       timestamp: new Date().toISOString(),
       dish: api?.dish,
       dish_confidence: api?.dish_confidence,
@@ -179,7 +186,7 @@ class MealLogger {
   }
 
   duplicateToToday(existing: LoggedMeal): LoggedMeal {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.formatYMD(new Date());
     const dup: LoggedMeal = {
       ...existing,
       id: this.generateId(),
