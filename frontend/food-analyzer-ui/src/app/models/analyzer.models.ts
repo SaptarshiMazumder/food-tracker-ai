@@ -30,6 +30,36 @@ export interface Timings {
   [k: string]: number | undefined;
 }
 
+// NEW: Health Score Models
+export interface HealthScoreInput {
+  total_kcal: number;
+  total_grams: number;
+  total_fat_g: number;
+  total_protein_g: number;
+  items_grams: { name: string; grams: number }[];
+  kcal_confidence: number;
+  use_confidence_dampen: boolean;
+}
+
+export interface ComponentScores {
+  energy_density: number;
+  protein_density: number;
+  fat_balance: number;
+  carb_quality: number;
+  sodium_proxy: number;
+  whole_foods: number;
+}
+
+export interface HealthScoreOutput {
+  health_score: number;
+  component_scores: ComponentScores;
+  weights: { [key: string]: number };
+  drivers_positive: string[];
+  drivers_negative: string[];
+  debug: { [key: string]: number };
+  classification: { name: string; category: string }[];
+}
+
 export interface ApiResponse {
   dish: string;
   dish_confidence: number;
@@ -56,6 +86,9 @@ export interface ApiResponse {
   // NEW
   timings?: Timings;
   total_ms?: number;
+
+  // NEW: Health Score
+  health_score?: HealthScoreOutput;
 }
 
 /** Row model for the ingredients table */
