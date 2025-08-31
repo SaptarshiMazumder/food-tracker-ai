@@ -157,7 +157,9 @@ export default function LogScreen() {
         <View style={styles.calendarGrid}>
           {weekDays.map((d) => {
             const totals = getDayTotals(d.dateString);
-            const iconColor = d.isSelected ? '#ffffff' : undefined;
+            const metricTextColor = d.isSelected ? '#ffffff' : d.isToday ? Colors.primary : '#555555';
+            const metricIconColor = d.isSelected ? '#ffffff' : Colors.primary;
+            const metricWeight = d.isSelected || d.isToday ? '600' : '400';
             return (
               <TouchableOpacity key={d.dateString} style={[styles.calendarDay, d.isToday && styles.today, d.isSelected && styles.selected]} onPress={() => setSelectedDate(d.dateString)}>
                 <Text style={[styles.dayName, d.isSelected && styles.selectedText]}>{d.dayName}</Text>
@@ -165,12 +167,12 @@ export default function LogScreen() {
                 {totals.kcal > 0 ? (
                   <View style={{ alignItems: 'center' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={[styles.totalKcal, d.isSelected && styles.selectedText]}>{totals.kcal.toFixed(0)}</Text>
-                      <MaterialCommunityIcons name="fire" size={12} color={iconColor || '#e91e63'} />
+                      <Text style={[styles.totalKcal, { color: metricTextColor, fontWeight: metricWeight as any }]}>{totals.kcal.toFixed(0)}</Text>
+                      <MaterialCommunityIcons name="fire" size={12} color={metricIconColor} />
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={[styles.totalProtein, d.isSelected && styles.selectedText]}>{totals.protein.toFixed(0)} g</Text>
-                      <MaterialCommunityIcons name="dumbbell" size={12} color={iconColor || '#4caf50'} />
+                      <Text style={[styles.totalProtein, { color: metricTextColor, fontWeight: metricWeight as any }]}>{totals.protein.toFixed(0)} g</Text>
+                      <MaterialCommunityIcons name="dumbbell" size={12} color={metricIconColor} />
                     </View>
                   </View>
                 ) : null}
@@ -252,8 +254,18 @@ export default function LogScreen() {
                     <View style={styles.rowBetween}>
                       {!expanded.has(m.id) ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>Calories {(m.total_kcal || 0).toFixed(0)}</Text></View>
-                          <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>Protein {(m.total_protein_g || 0).toFixed(1)} g</Text></View>
+                          <View style={styles.neutralBubble}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <MaterialCommunityIcons name="fire" size={12} color={Colors.primary} />
+                              <Text style={styles.neutralBubbleText}>{(m.total_kcal || 0).toFixed(0)}</Text>
+                            </View>
+                          </View>
+                          <View style={styles.neutralBubble}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <MaterialCommunityIcons name="dumbbell" size={12} color={Colors.primary} />
+                              <Text style={styles.neutralBubbleText}>{(m.total_protein_g || 0).toFixed(1)} g</Text>
+                            </View>
+                          </View>
                         </View>
                       ) : <View />}
                     </View>
@@ -400,13 +412,13 @@ const styles = StyleSheet.create({
   navBtn: { backgroundColor: Colors.primary, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   calendarDay: { width: '14.2857%', minWidth: '14.2857%', paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRightWidth: 1, borderTopWidth: 1, borderColor: '#e9ecef' },
-  today: { backgroundColor: '#e3f2fd' },
+  today: { backgroundColor: Colors.accentSurface },
   selected: { backgroundColor: Colors.primary },
   selectedText: { color: '#fff' },
   dayName: { fontSize: 11, color: '#666', textTransform: 'uppercase' },
   dayDate: { fontSize: 16, fontWeight: '600', color: '#333' },
-  totalKcal: { fontSize: 10, color: '#e91e63', fontWeight: '600' },
-  totalProtein: { fontSize: 10, color: '#4caf50', fontWeight: '600' },
+  totalKcal: { fontSize: 10, color: '#000', fontWeight: '600' },
+  totalProtein: { fontSize: 10, color: '#000', fontWeight: '600' },
   searchSection: { paddingHorizontal: 16, marginTop: 10 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   searchInput: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 },
