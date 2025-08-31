@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 
 import { Colors } from '../theme/colors';
 import { mealLogger, LoggedMeal, DailyMealLog } from '../services/mealLogger';
 import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 function startOfWeek(date: Date): Date {
   const d = new Date(date);
@@ -121,14 +122,21 @@ export default function LogScreen() {
         <View style={styles.calendarGrid}>
           {weekDays.map((d) => {
             const totals = getDayTotals(d.dateString);
+            const iconColor = d.isSelected ? '#ffffff' : undefined;
             return (
               <TouchableOpacity key={d.dateString} style={[styles.calendarDay, d.isToday && styles.today, d.isSelected && styles.selected]} onPress={() => setSelectedDate(d.dateString)}>
                 <Text style={[styles.dayName, d.isSelected && styles.selectedText]}>{d.dayName}</Text>
                 <Text style={[styles.dayDate, d.isSelected && styles.selectedText]}>{d.date.getDate()}</Text>
                 {totals.kcal > 0 ? (
-                  <View>
-                    <Text style={[styles.totalKcal, d.isSelected && styles.selectedText]}>{totals.kcal.toFixed(0)} cal</Text>
-                    <Text style={[styles.totalProtein, d.isSelected && styles.selectedText]}>{totals.protein.toFixed(0)}p</Text>
+                  <View style={{ alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={[styles.totalKcal, d.isSelected && styles.selectedText]}>{totals.kcal.toFixed(0)}</Text>
+                      <MaterialCommunityIcons name="fire" size={12} color={iconColor || '#e91e63'} />
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={[styles.totalProtein, d.isSelected && styles.selectedText]}>{totals.protein.toFixed(0)} g</Text>
+                      <MaterialCommunityIcons name="dumbbell" size={12} color={iconColor || '#4caf50'} />
+                    </View>
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -189,10 +197,10 @@ export default function LogScreen() {
           <Text style={styles.dailyTitle}>{formatDateNice(log.date)}</Text>
           {log.meals.length > 0 ? (
             <View style={styles.totalsRow}>
-              <View style={styles.totalItem}><Text style={styles.totalLabel}>Total kcal</Text><Text style={styles.totalValue}>{log.dailyTotals.total_kcal.toFixed(0)}</Text></View>
-              <View style={styles.totalItem}><Text style={styles.totalLabel}>Protein</Text><Text style={styles.totalValue}>{log.dailyTotals.total_protein_g.toFixed(1)} g</Text></View>
-              <View style={styles.totalItem}><Text style={styles.totalLabel}>Carbs</Text><Text style={styles.totalValue}>{log.dailyTotals.total_carbs_g.toFixed(1)} g</Text></View>
-              <View style={styles.totalItem}><Text style={styles.totalLabel}>Fat</Text><Text style={styles.totalValue}>{log.dailyTotals.total_fat_g.toFixed(1)} g</Text></View>
+              <View style={styles.totalItem}><Text style={styles.totalLabel}>CALORIES</Text><View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{log.dailyTotals.total_kcal.toFixed(0)}</Text></View></View>
+              <View style={styles.totalItem}><Text style={styles.totalLabel}>Protein</Text><View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{log.dailyTotals.total_protein_g.toFixed(1)} g</Text></View></View>
+              <View style={styles.totalItem}><Text style={styles.totalLabel}>Carbs</Text><View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{log.dailyTotals.total_carbs_g.toFixed(1)} g</Text></View></View>
+              <View style={styles.totalItem}><Text style={styles.totalLabel}>Fat</Text><View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{log.dailyTotals.total_fat_g.toFixed(1)} g</Text></View></View>
             </View>
           ) : null}
         </View>
@@ -202,11 +210,17 @@ export default function LogScreen() {
               <View key={m.id} style={styles.card}>
                 <TouchableOpacity onPress={() => toggle(m.id)} style={styles.rowBetween}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.mealTitle}>{m.dish || 'Meal'}</Text>
-                    <View style={styles.quickStats}>
-                      <Text style={styles.kcal}>{(m.total_kcal || 0).toFixed(0)} cal</Text>
-                      <Text style={styles.protein}>{(m.total_protein_g || 0).toFixed(0)}p</Text>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.mealTitle}>{m.dish || 'Meal'}</Text>
                       <Text style={styles.time}>{formatTime(m.timestamp)}</Text>
+                    </View>
+                    <View style={styles.rowBetween}>
+                      {!expanded.has(m.id) ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>Calories {(m.total_kcal || 0).toFixed(0)}</Text></View>
+                          <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>Protein {(m.total_protein_g || 0).toFixed(1)} g</Text></View>
+                        </View>
+                      ) : <View />}
                     </View>
                   </View>
                   <MaterialIcons name={expanded.has(m.id) ? 'expand-more' : 'chevron-right'} size={20} color="#999" />
@@ -263,7 +277,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '600' },
   btn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ddd' },
   btnPrimary: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  btnSearch: { backgroundColor: '#28a745', borderColor: '#28a745' },
+  btnSearch: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   btnClear: { backgroundColor: '#6c757d', borderColor: '#6c757d' },
   btnAdd: { backgroundColor: '#28a745', borderColor: '#28a745' },
   btnRemove: { backgroundColor: '#dc3545', borderColor: '#dc3545' },
@@ -294,15 +308,19 @@ const styles = StyleSheet.create({
   kcal: { color: '#e91e63', fontWeight: '600' },
   grams: { color: '#666' },
   daily: { margin: 16, borderWidth: 1, borderColor: '#e9ecef', borderRadius: 8, overflow: 'hidden' },
-  dailyHeader: { backgroundColor: '#f8f9fa', padding: 12, borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
+  dailyHeader: { backgroundColor: 'transparent', padding: 12, borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
   dailyTitle: { fontSize: 20, fontWeight: '600' },
   totalsRow: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
   totalItem: { minWidth: 72, alignItems: 'center' },
   totalLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
   totalValue: { fontSize: 18, fontWeight: '600', color: '#333' },
+  accentBubble: { backgroundColor: Colors.accentSurface, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, marginTop: 4 },
+  accentBubbleText: { color: Colors.accentText, fontWeight: '400' },
   quickStats: { flexDirection: 'row', gap: 12, marginTop: 4 },
   protein: { color: '#4caf50', fontWeight: '600' },
   time: { color: Colors.primary },
+  neutralBubble: { backgroundColor: Colors.neutralSurface, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 999 },
+  neutralBubbleText: { color: Colors.neutralText, fontSize: 11 },
   nutritionGrid: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   nutItem: { paddingHorizontal: 8, paddingVertical: 6, backgroundColor: '#f8f9fa', borderRadius: 6, borderWidth: 1, borderColor: '#eee' },
   nutLabel: { fontSize: 11, color: '#666', textTransform: 'uppercase' },
