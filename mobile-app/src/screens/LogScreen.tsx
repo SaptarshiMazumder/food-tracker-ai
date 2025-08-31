@@ -367,7 +367,7 @@ export default function LogScreen() {
                       </View>
                     </View>
                   </View>
-                  <MaterialIcons name={"chevron-right"} size={20} color="#999" />
+                  {/* Removed dropdown arrow icon */}
                 </TouchableOpacity>
                 {/* Removed inline dropdown details to rely on detail modal */}
                 {idx < log.meals.length - 1 ? <View style={styles.separator} /> : null}

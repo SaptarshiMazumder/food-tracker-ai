@@ -89,6 +89,7 @@ export default function AnalyzeScreen() {
   const [healthScore, setHealthScore] = useState<HealthScoreOutput | null>(null);
   const [healthScoreLoading, setHealthScoreLoading] = useState(false);
   const [loggedMealId, setLoggedMealId] = useState<string | null>(null);
+  const [showSavedNotification, setShowSavedNotification] = useState(false);
 
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
@@ -182,6 +183,7 @@ export default function AnalyzeScreen() {
       setHealthScore(null);
       setHealthScoreLoading(false);
       setLoggedMealId(null);
+      setShowSavedNotification(false);
       // Streaming flow exactly like web UI with Gemini only (no LogMeal)
       const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
       const acc: any = {};
@@ -224,6 +226,8 @@ export default function AnalyzeScreen() {
           try {
             const logged = mealLogger.logFromAnalysis(finalRes, 'gemini', 'gemini');
             setLoggedMealId(logged.id);
+            setShowSavedNotification(true);
+            setTimeout(() => setShowSavedNotification(false), 3000);
           } catch {}
           // Trigger health score fetch and persist
           try {
@@ -329,9 +333,11 @@ export default function AnalyzeScreen() {
   // No auto-analysis; user must press Analyze
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Removed explicit screen title per request */}
       <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
+      {/* toast rendered outside ScrollView for visibility */}
       {/* Compute macro percentages for rings */}
       {(() => {
         return null;
@@ -686,7 +692,14 @@ export default function AnalyzeScreen() {
           ) : null}
         </View>
       ) : null}
-    </ScrollView>
+      </ScrollView>
+      {showSavedNotification ? (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>Meal details saved to logs</Text>
+          <Ionicons name="checkmark-circle" size={18} color="#ffffff" style={styles.iconAlignUp} />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -795,6 +808,29 @@ const styles = StyleSheet.create({
   accentBubbleText: {
     color: Colors.accentText,
     fontWeight: '400',
+  },
+  toast: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    backgroundColor: '#22c55e',
+    borderWidth: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  toastText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
   neutralBubble: {
     backgroundColor: Colors.neutralSurface,
