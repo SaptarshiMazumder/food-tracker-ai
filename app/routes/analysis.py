@@ -3,7 +3,10 @@ import os
 from flask import Blueprint, request, jsonify, Response, current_app
 from werkzeug.utils import secure_filename
 
-from ..services.food_analysis.food_analysis_service import FoodAnalysisService
+from ..services.graphs import run_food_analysis
+from ..services.food_analysis.food_analysis_formatter import FoodAnalysisFormatter
+from ..services.food_analysis.food_analysis_streamer import FoodAnalysisStreamer
+from ..services.food_analysis.food_analysis_config import FoodAnalysisConfig
 from ..utils.helpers import (
     gather_images, save_uploads, load_job_paths, save_job_manifest, 
     persist_history
@@ -25,13 +28,20 @@ def analyze():
 
     model = request.form.get("model") or request.args.get("model") or current_app.config['DEFAULT_MODEL']
     
-    service = FoodAnalysisService()
-    res = service.run_food_analysis(save_paths, model)
+    config = FoodAnalysisConfig()
+    try:
+        res = run_food_analysis(save_paths, config.project, config.location, model)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"[ERROR] Food analysis exception: {str(e)}")
+        print(f"[ERROR] Full traceback: {error_details}")
+        return jsonify({"error": "food_analysis_exception", "msg": str(e), "details": error_details}), 500
     
     if res.get("error"):
         return jsonify({"error": res["error"], "dish": res.get("dish")}), 400
 
-    data = service.finalize_payload(res, save_paths)
+    data = FoodAnalysisFormatter.create_final_payload(res, save_paths)
     persist_history(data, save_paths[0])
     print(f"[api] ⏱ total {data.get('total_ms')} ms  → timings: {data.get('timings')}")
     return jsonify(data), 200
@@ -65,10 +75,11 @@ def analyze_sse():
 
     model = request.args.get("model") or current_app.config['DEFAULT_MODEL']
 
-    service = FoodAnalysisService()
+    config = FoodAnalysisConfig()
+    streamer = FoodAnalysisStreamer(config)
     
     def event_stream():
-        for event in service.stream_analysis(image_paths, model):
+        for event in streamer.stream_analysis(image_paths, model):
             yield event
         # Persist the final result
         # Note: This would need to be handled differently in the streaming context

@@ -52,9 +52,10 @@ result = ingredients_from_image(
 The food analysis service automatically uses the configured provider:
 
 ```python
-from app.services.food_analysis.food_analysis_ingredients import ingredients_from_image_wrapper
+from app.services.food_analysis.food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
 
-result = ingredients_from_image_wrapper(
+quantifier = FoodAnalysisIngredientQuantifierFactory.create_quantifier('openai')
+result = quantifier.quantify_ingredients(
     project="your-project",
     location="global",
     model="gpt-4o",
@@ -118,4 +119,4 @@ The function returns error information in the same format as Gemini:
 
 ## Integration with LangGraph
 
-The service integrates seamlessly with the existing food analysis LangGraph by using the wrapper function `ingredients_from_image_wrapper()`. The graph nodes automatically use the configured provider based on the `INGREDIENTS_PROVIDER` environment variable.
+The service integrates seamlessly with the existing food analysis LangGraph by using the strategy pattern. The graph nodes automatically use the configured provider based on the `INGREDIENTS_PROVIDER` environment variable.

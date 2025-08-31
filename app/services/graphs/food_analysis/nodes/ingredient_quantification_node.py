@@ -1,7 +1,7 @@
 import time
 from typing import List, Optional
 
-from ....food_analysis.food_analysis_ingredients import ingredients_from_image_wrapper
+from ....food_analysis.food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
 from ..state.food_analysis_state import FoodAnalysisState
 from ..utils.timing import calculate_ms, print_node_summary
 
@@ -18,11 +18,12 @@ def quantify_ingredients(state: FoodAnalysisState) -> FoodAnalysisState:
     t0 = time.perf_counter()
 
     # Use configured provider for ingredient detection and quantification
-    res = ingredients_from_image_wrapper(
-        state["project"], 
-        state["location"], 
-        state["model"], 
-        state["image_paths"],
+    quantifier = FoodAnalysisIngredientQuantifierFactory.create_quantifier()
+    res = quantifier.quantify_ingredients(
+        project=state["project"], 
+        location=state["location"], 
+        model=state["model"], 
+        image_paths=state["image_paths"],
         dish_hint=state.get("dish", ""), 
         ing_hint=state.get("ingredients", [])
     )

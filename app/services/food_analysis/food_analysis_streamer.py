@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Generator
 
 from ...utils.helpers import fnum, sse_pack, call_with_heartbeat
 from ...services.gemini.gemini_recognize import gemini_recognize_dish
-from ...services.food_analysis.food_analysis_ingredients import ingredients_from_image_wrapper
+from .food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
 from ...services.gemini.gemini_calories import calories_from_ingredients
 from .food_analysis_config import FoodAnalysisConfig
 from .food_analysis_formatter import FoodAnalysisFormatter
@@ -47,8 +47,9 @@ class FoodAnalysisStreamer:
         t0 = time.perf_counter()
         
         # Use configured provider for ingredient detection
+        quantifier = FoodAnalysisIngredientQuantifierFactory.create_quantifier()
         ing = yield from call_with_heartbeat(
-            lambda: ingredients_from_image_wrapper(
+            lambda: quantifier.quantify_ingredients(
                 self.config.project, self.config.location, model, image_paths,
                 dish_hint=state["dish"], ing_hint=state["ingredients_detected"]
             )
