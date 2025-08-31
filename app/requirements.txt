@@ -6,6 +6,9 @@ python-dotenv>=1.0
 # ---- Google Gemini SDK (the one you use: `from google import genai`) ----
 google-genai>=0.3
 
+# ---- OpenAI SDK ----
+openai>=1.0
+
 # ---- Orchestration (your langgraph/graph.py pieces) ----
 langgraph>=0.2
 
