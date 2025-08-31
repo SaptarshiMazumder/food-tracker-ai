@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify, render_template_string
+from flask import Blueprint, jsonify, render_template_string, request
+from werkzeug.exceptions import BadRequest
+from app.services.gemini.gemini_healthscore import score_with_gemini
 
 health_bp = Blueprint('health', __name__)
 
@@ -25,3 +27,16 @@ def index():
 def health():
     """Health check endpoint"""
     return {"ok": True}, 200
+
+@health_bp.route("/health-score", methods=["POST"])
+def health_score():
+    """Health score endpoint"""
+    body = request.get_json(silent=True)
+    if not body:
+        raise BadRequest("JSON body required")
+
+    try:
+        result = score_with_gemini(body)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": "health_score_failed", "message": str(e)}), 500

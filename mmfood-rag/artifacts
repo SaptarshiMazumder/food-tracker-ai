@@ -1,8 +1,0 @@
-<script>start("c:\\Users\\sapma\\OneDrive\\Desktop\\Projects\\RAG\\Langchain_2\\mmfood-rag\\artifacts\\");</script>
-<script>onHasParentDirectory();</script>
-<script>addRow("embedding_model.txt","embedding_model.txt",0,38,"38 B",1756301390,"8/27/25, 10:29:50 PM");</script>
-<script>addRow("manifest.json","manifest.json",0,96,"96 B",1756301390,"8/27/25, 10:29:50 PM");</script>
-<script>addRow("mm_food_meta.parquet","mm_food_meta.parquet",0,5160696,"4.9 MB",1756301392,"8/27/25, 10:29:52 PM");</script>
-<script>addRow("mm_food.faiss","mm_food.faiss",0,153600045,"146 MB",1756301392,"8/27/25, 10:29:52 PM");</script>
-<script>addRow("recipes_meta.parquet","recipes_meta.parquet",0,30185441,"28.8 MB",1756301394,"8/27/25, 10:29:54 PM");</script>
-<script>addRow("recipes.faiss","recipes.faiss",0,324177453,"309 MB",1756301394,"8/27/25, 10:29:54 PM");</script>
