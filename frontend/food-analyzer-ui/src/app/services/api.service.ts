@@ -4,6 +4,7 @@ import { Observable, throwError, of } from 'rxjs';
 import { map, catchError, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { RAGQueryResponse, RAGQueryRequest } from '../models/rag.models';
+import { HealthScoreInput, HealthScoreOutput } from '../models/analyzer.models';
 
 export interface AnalyzeItemGrams {
   name: string;
@@ -218,6 +219,19 @@ export class ApiService {
         catchError((err: HttpErrorResponse) => {
           return throwError(
             () => err.error || { error: 'recipe_details_failed' }
+          );
+        })
+      );
+  }
+
+  // NEW: Health Score method
+  getHealthScore(input: HealthScoreInput): Observable<HealthScoreOutput> {
+    return this.http
+      .post<HealthScoreOutput>(`${this.base}/health-score`, input)
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          return throwError(
+            () => err.error || { error: 'health_score_failed' }
           );
         })
       );

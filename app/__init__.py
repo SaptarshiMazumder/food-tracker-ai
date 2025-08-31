@@ -15,11 +15,9 @@ def create_app(config_class=Config):
     
     # Register blueprints
     from .routes.analysis import analysis_bp
-    from .routes.rag import rag_bp
     from .routes.health import health_bp
     
     app.register_blueprint(analysis_bp)
-    app.register_blueprint(rag_bp)
     app.register_blueprint(health_bp)
     
     return app

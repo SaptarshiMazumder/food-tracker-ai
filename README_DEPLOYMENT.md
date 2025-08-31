@@ -84,7 +84,6 @@ After deployment, you need to set up environment variables in Google Cloud Conso
 
 ### Required Variables:
 
-- `LOGMEAL_TOKEN`: Your LogMeal API token (if using LogMeal)
 - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your Google service account key
 
 ### Optional Variables:

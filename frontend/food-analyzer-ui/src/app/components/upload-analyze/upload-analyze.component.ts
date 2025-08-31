@@ -1,6 +1,11 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiResponse, UiItem, UiTotals } from '../../models/analyzer.models';
+import {
+  ApiResponse,
+  UiItem,
+  UiTotals,
+  HealthScoreInput,
+} from '../../models/analyzer.models';
 import { FoodAnalyzerService } from '../../services/food-analyzer.service';
 import { ApiService, AnalysisOptions } from '../../services/api.service';
 import { MealLoggerService } from '../../services/meal-logger.service';
@@ -27,6 +32,7 @@ export class UploadAnalyzeComponent {
   started = false; // NEW: hide UI until user starts a run
   errorMsg = '';
   showMealLoggedNotification = false;
+  showHealthScoreNotification = false;
 
   // progressive state
   result: Partial<ApiResponse> = {};
@@ -37,6 +43,7 @@ export class UploadAnalyzeComponent {
   gotRecognize = false;
   gotIngr = false;
   gotCalories = false;
+  gotHealthScore = false;
 
   // NEW: Analysis mode and options
   analysisMode: AnalysisMode = 'gemini';
@@ -172,6 +179,9 @@ export class UploadAnalyzeComponent {
       // Log the meal automatically when analysis is complete
       this.logMeal();
 
+      // Get health score when analysis is complete
+      this.getHealthScore();
+
       this.loading = false;
       this.showMealLoggedNotification = true;
       setTimeout(() => {
@@ -222,10 +232,15 @@ export class UploadAnalyzeComponent {
     this.started = false; // NEW: hide result panel on first load/after clear
     this.errorMsg = '';
     this.showMealLoggedNotification = false;
+    this.showHealthScoreNotification = false;
     this.result = {};
     this.uiItems = [];
     this.totals = null;
-    this.gotRecognize = this.gotIngr = this.gotCalories = false;
+    this.gotRecognize =
+      this.gotIngr =
+      this.gotCalories =
+      this.gotHealthScore =
+        false;
     this.currentService = null;
   }
 
@@ -251,5 +266,69 @@ export class UploadAnalyzeComponent {
     } catch (error) {
       console.error('Error logging meal:', error);
     }
+  }
+
+  /**
+   * Get health score for the analyzed meal
+   */
+  private getHealthScore(): void {
+    if (
+      this.result.total_kcal &&
+      this.result.total_grams &&
+      this.result.total_fat_g &&
+      this.result.total_protein_g &&
+      this.result.items_grams
+    ) {
+      const healthScoreInput: HealthScoreInput = {
+        total_kcal: this.result.total_kcal,
+        total_grams: this.result.total_grams,
+        total_fat_g: this.result.total_fat_g,
+        total_protein_g: this.result.total_protein_g || 0,
+        items_grams: this.result.items_grams.map((item) => ({
+          name: item.name,
+          grams: item.grams,
+        })),
+        kcal_confidence: this.result.kcal_confidence || 1.0,
+        use_confidence_dampen: false,
+      };
+
+      this.apiService.getHealthScore(healthScoreInput).subscribe({
+        next: (healthScore) => {
+          this.result.health_score = healthScore;
+          this.gotHealthScore = true;
+          console.log('Health score received:', healthScore);
+          this.cdr.detectChanges();
+
+          // Show notification
+          this.showHealthScoreNotification = true;
+          setTimeout(() => {
+            this.showHealthScoreNotification = false;
+          }, 3000);
+        },
+        error: (error) => {
+          console.error('Health score failed:', error);
+          // Don't show error to user, health score is optional
+        },
+      });
+    }
+  }
+
+  /**
+   * Get component scores for display
+   */
+  getComponentScores(): Array<{ name: string; score: number }> {
+    if (!this.result.health_score?.component_scores) {
+      return [];
+    }
+
+    const scores = this.result.health_score.component_scores;
+    return [
+      { name: 'Energy Density', score: scores.energy_density },
+      { name: 'Protein Density', score: scores.protein_density },
+      { name: 'Fat Balance', score: scores.fat_balance },
+      { name: 'Carb Quality', score: scores.carb_quality },
+      { name: 'Sodium Proxy', score: scores.sodium_proxy },
+      { name: 'Whole Foods', score: scores.whole_foods },
+    ];
   }
 }

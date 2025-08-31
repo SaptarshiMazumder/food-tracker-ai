@@ -7,29 +7,39 @@ import base64
 
 def make_client(project: str, location: str) -> genai.Client:
     api_key = os.getenv("GOOGLE_API_KEY")
+    
+    # Prioritize API key authentication for Docker containers
+    # This avoids the Application Default Credentials error
+    if api_key:
+        return genai.Client(api_key=api_key)
+    
+    # Fallback to Vertex AI if no API key is available
     if project:
         try:
             return genai.Client(vertexai=True, project=project, location=location)
-        except Exception:
-            if api_key:
-                return genai.Client(api_key=api_key)
-            raise
-    if not api_key:
-        raise RuntimeError("Provide GOOGLE_CLOUD_PROJECT (Vertex) or GOOGLE_API_KEY.")
-    return genai.Client(api_key=api_key)
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize Vertex AI client: {e}")
+    
+    raise RuntimeError("Provide GOOGLE_API_KEY for API key authentication or GOOGLE_CLOUD_PROJECT for Vertex AI.")
 
 def prepare_image_part(client: genai.Client, path: str):
     """
-    Prefer File API; fallback to inline bytes.
+    Prepare image part for Gemini API.
+    When using API key authentication, use inline bytes.
+    When using Vertex AI, prefer File API with fallback to inline bytes.
     """
-    try:
-        return client.files.upload(file=path)
-    except Exception:
-        with open(path, "rb") as f:
-            data = f.read()
-        ext = os.path.splitext(path)[1].lower()
-        mime = "image/jpeg" if ext in [".jpg",".jpeg"] else ("image/png" if ext==".png" else "image/webp")
-        return types.Part.from_bytes(data=data, mime_type=mime)
+    # Check if we're using API key authentication
+    api_key = os.getenv("GOOGLE_API_KEY")
+    
+    if api_key:
+        # Use inline bytes for API key authentication
+        return encode_image_to_part(path)
+    else:
+        # Try File API first for Vertex AI, then fallback to inline bytes
+        try:
+            return client.files.upload(file=path)
+        except Exception:
+            return encode_image_to_part(path)
 
 def prepare_image_parts(client: genai.Client, paths: List[str]):
     parts = []

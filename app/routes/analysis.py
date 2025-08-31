@@ -3,10 +3,10 @@ import os
 from flask import Blueprint, request, jsonify, Response, current_app
 from werkzeug.utils import secure_filename
 
-from ..services.analysis_service import AnalysisService
+from ..services.food_analysis.food_analysis_service import FoodAnalysisService
 from ..utils.helpers import (
     gather_images, save_uploads, load_job_paths, save_job_manifest, 
-    persist_history, parse_use_logmeal_param
+    persist_history
 )
 
 analysis_bp = Blueprint('analysis', __name__)
@@ -24,12 +24,9 @@ def analyze():
         return jsonify({"error": "bad_extension", "msg": str(ve)}), 400
 
     model = request.form.get("model") or request.args.get("model") or current_app.config['DEFAULT_MODEL']
-    use_logmeal = parse_use_logmeal_param(
-        request.form.get("use_logmeal") or request.args.get("use_logmeal")
-    )
     
-    service = AnalysisService()
-    res = service.run_full_analysis(save_paths, model, use_logmeal)
+    service = FoodAnalysisService()
+    res = service.run_food_analysis(save_paths, model)
     
     if res.get("error"):
         return jsonify({"error": res["error"], "dish": res.get("dish")}), 400
@@ -67,12 +64,11 @@ def analyze_sse():
         return jsonify({"error": "invalid_job_id"}), 404
 
     model = request.args.get("model") or current_app.config['DEFAULT_MODEL']
-    use_logmeal = parse_use_logmeal_param(request.args.get("use_logmeal"))
 
-    service = AnalysisService()
+    service = FoodAnalysisService()
     
     def event_stream():
-        for event in service.stream_analysis(image_paths, model, use_logmeal):
+        for event in service.stream_analysis(image_paths, model):
             yield event
         # Persist the final result
         # Note: This would need to be handled differently in the streaming context

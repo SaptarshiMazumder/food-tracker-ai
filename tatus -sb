@@ -1,0 +1,5 @@
+[33m5b98a04[m[33m ([m[1;36mHEAD -> [m[1;32mreact-app[m[33m, [m[1;31morigin/react-app[m[33m, [m[1;32mreact-app-backup-merge-20250831183134[m[33m)[m small ui color changes in logger
+[33m509157d[m fixed some ui in the log page
+[33mbdd5560[m Move copy feature added
+[33m0ac3eb3[m Changhed card styles a bit in log screen
+[33me77f50c[m Added some style changes to calendar
