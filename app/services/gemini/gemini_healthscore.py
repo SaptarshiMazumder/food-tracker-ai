@@ -1,15 +1,16 @@
 # app/services/gemini/gemini_healthscore.py
 import json
-from pathlib import Path
 from typing import Dict, Any
 from app.services.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
 from app.models.health_score import HealthScoreInput, HealthScoreOutput
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+from prompts.health_score_prompt import HEALTH_SCORE_PROMPT
 from google.genai import types
 
-PROMPT_PATH = Path(__file__).resolve().parents[2] / "config" / "health_score_prompt.md"
-
 def _load_prompt() -> str:
-    return PROMPT_PATH.read_text(encoding="utf-8")
+    return HEALTH_SCORE_PROMPT
 
 def score_with_gemini(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Calls Gemini with the rubric prompt; expects strict JSON back."""
