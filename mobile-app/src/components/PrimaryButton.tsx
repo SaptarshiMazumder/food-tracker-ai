@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, View } from 'react-native';
 import { Colors } from '../theme/colors';
 
 type PrimaryButtonProps = {
@@ -10,9 +10,10 @@ type PrimaryButtonProps = {
   textStyle?: TextStyle;
   disabledStyle?: ViewStyle;
   disabledTextStyle?: TextStyle;
+  leftIcon?: React.ReactNode;
 };
 
-export default function PrimaryButton({ title, onPress, disabled, style, textStyle, disabledStyle, disabledTextStyle }: PrimaryButtonProps) {
+export default function PrimaryButton({ title, onPress, disabled, style, textStyle, disabledStyle, disabledTextStyle, leftIcon }: PrimaryButtonProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -20,7 +21,10 @@ export default function PrimaryButton({ title, onPress, disabled, style, textSty
       disabled={disabled}
       style={[styles.button, style, disabled ? [styles.buttonDisabled, disabledStyle] : undefined]}
     >
-      <Text style={[styles.text, textStyle, disabled ? disabledTextStyle : undefined]}>{title}</Text>
+      <View style={styles.contentRow}>
+        {leftIcon ? <View style={styles.iconWrap}>{leftIcon}</View> : null}
+        <Text style={[styles.text, textStyle, disabled ? disabledTextStyle : undefined]}>{title}</Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -38,6 +42,14 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrap: {
+    marginRight: 6,
   },
   text: {
     color: Colors.text,

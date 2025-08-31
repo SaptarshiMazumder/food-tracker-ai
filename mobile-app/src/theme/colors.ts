@@ -15,6 +15,11 @@ export const Colors = {
   // Controls
   sliderActive: '#ff7a00',
   sliderInactive: '#dddddd',
+
+  // Macro rings
+  macroProtein: '#3b82f6',
+  macroCarbs: '#ef4444',
+  macroFat: '#facc15',
 };
 
 

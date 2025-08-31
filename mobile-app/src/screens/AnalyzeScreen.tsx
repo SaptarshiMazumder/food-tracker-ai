@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, An
 import { Colors } from '../theme/colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
+import { mealLogger } from '../services/mealLogger';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
 import Slider from '@react-native-community/slider';
 
@@ -19,9 +20,12 @@ type CircularProgressProps = {
   progressColor?: string;
   trackOpacity?: number;
   progressOpacity?: number;
+  labelColor?: string;
+  labelFontSize?: number;
+  labelDy?: number;
 };
 
-function CircularProgress({ size, trackWidth = 4, progressWidth = 7, progress, trackColor = Colors.sliderInactive, progressColor = Colors.primary, trackOpacity = 0.5, progressOpacity = 1 }: CircularProgressProps) {
+function CircularProgress({ size, trackWidth = 4, progressWidth = 7, progress, trackColor = Colors.sliderInactive, progressColor = Colors.primary, trackOpacity = 0.5, progressOpacity = 1, labelColor = Colors.neutralText, labelFontSize = 11, labelDy = 0 }: CircularProgressProps) {
   const clamped = Math.max(0, Math.min(1, progress || 0));
   const maxStroke = Math.max(trackWidth, progressWidth);
   const radius = (size - maxStroke) / 2;
@@ -52,6 +56,18 @@ function CircularProgress({ size, trackWidth = 4, progressWidth = 7, progress, t
         fill="none"
         transform={`rotate(-90 ${center} ${center})`}
       />
+      <SvgText
+        x={center}
+        y={center}
+        dy={labelDy}
+        fill={labelColor}
+        fontSize={labelFontSize}
+        fontWeight="500"
+        textAnchor="middle"
+        alignmentBaseline="middle"
+      >
+        {`${Math.round(clamped * 100)}%`}
+      </SvgText>
     </Svg>
   );
 }
@@ -196,6 +212,9 @@ export default function AnalyzeScreen() {
               setGrams(baseGrams);
               setTotals(computeTotals(ui, baseGrams));
             }
+            try {
+              mealLogger.logFromAnalysis(res, 'gemini', 'gemini');
+            } catch {}
             return res;
           });
           setHasAnalyzed(true);
@@ -221,13 +240,14 @@ export default function AnalyzeScreen() {
       })()}
       <View style={styles.actions}>
         <PrimaryButton
-          title="Upload Images"
+          title="Upload Image(s)"
           onPress={onUpload}
           disabled={loading}
           style={{ backgroundColor: Colors.primary, borderWidth: 0 }}
           textStyle={{ color: '#ffffff' }}
           disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
           disabledTextStyle={{ color: Colors.neutralText }}
+          leftIcon={<Ionicons name="images-outline" size={18} color="#ffffff" style={styles.iconAlignUp} />}
         />
         <Text style={{ marginTop: 6, color: '#777' }}>
           In the picker, long-press then tap multiple items to multi-select.
@@ -247,10 +267,11 @@ export default function AnalyzeScreen() {
             title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"}
             onPress={onAnalyze}
             disabled={selectedUris.length === 0 || loading}
-            style={{ backgroundColor: '#ff7a00', borderWidth: 0 }}
+            style={{ backgroundColor: Colors.primary, borderWidth: 0 }}
             textStyle={{ color: '#ffffff' }}
-            disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
-            disabledTextStyle={{ color: '#999999' }}
+            disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
+            disabledTextStyle={{ color: Colors.neutralText }}
+            leftIcon={hasAnalyzed && !loading ? (<Ionicons name="refresh-outline" size={18} color="#ffffff" style={styles.iconAlignUp} />) : undefined}
           />
         </View>
         <View style={styles.half}>
@@ -322,7 +343,7 @@ export default function AnalyzeScreen() {
                 <Ionicons name="stats-chart-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
               </View>
               {typeof result?.total_grams === 'number' ? (
-                <View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{result!.total_grams} g</Text></View>
+                <View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{result!.total_grams} g total</Text></View>
               ) : null}
             </View>
             {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
@@ -346,7 +367,7 @@ export default function AnalyzeScreen() {
                       </View>
                       <View style={styles.tile}>
                         <View style={styles.ringRightOverlay} pointerEvents="none">
-                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={p} trackOpacity={0.35} />
+                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={p} trackOpacity={0.35} progressColor={Colors.macroProtein} labelColor={Colors.neutralText} labelFontSize={14} labelDy={2} />
                         </View>
                         <View style={styles.ringedContent}>
                           <View style={styles.rowBetween}>
@@ -360,7 +381,7 @@ export default function AnalyzeScreen() {
                       </View>
                       <View style={styles.tile}>
                         <View style={styles.ringRightOverlay} pointerEvents="none">
-                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={c} trackOpacity={0.35} />
+                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={c} trackOpacity={0.35} progressColor={Colors.macroCarbs} labelColor={Colors.neutralText} labelFontSize={14} labelDy={2} />
                         </View>
                         <View style={styles.ringedContent}>
                           <View style={styles.rowBetween}>
@@ -374,7 +395,7 @@ export default function AnalyzeScreen() {
                       </View>
                       <View style={styles.tile}>
                         <View style={styles.ringRightOverlay} pointerEvents="none">
-                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={f} trackOpacity={0.35} />
+                          <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={f} trackOpacity={0.35} progressColor={Colors.macroFat} labelColor={Colors.neutralText} labelFontSize={14} labelDy={2} />
                         </View>
                         <View style={styles.ringedContent}>
                           <View style={styles.rowBetween}>
@@ -614,6 +635,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#eee',
+    // subtle, centered, blurred shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 50,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 14,
@@ -672,7 +699,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   iconAlignUp: {
-    transform: [{ translateY: -5 }],
+    transform: [{ translateY: -2 }],
   },
   ringOverlay: {
     position: 'absolute',

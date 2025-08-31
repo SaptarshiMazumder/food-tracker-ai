@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import HomeScreen from './src/screens/HomeScreen';
 import AnalyzeScreen from './src/screens/AnalyzeScreen';
-import MealsScreen from './src/screens/MealsScreen';
+import LogScreen from './src/screens/LogScreen';
 import RagScreen from './src/screens/RagScreen';
 import { Colors } from './src/theme/colors';
 
@@ -49,11 +49,11 @@ export default function App() {
           }}
         />
         <Tab.Screen
-          name="Meals"
-          component={MealsScreen}
+          name="Log"
+          component={LogScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="restaurant" size={size} color={color} />
+              <MaterialIcons name="calendar-today" size={size} color={color} />
             ),
           }}
         />
