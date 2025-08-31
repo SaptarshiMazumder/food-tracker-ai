@@ -7,7 +7,7 @@ import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
 import Card from '../components/Card';
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadAnalyzeImage, AnalysisResponse, analyzeStream } from '../services/api';
+import { uploadAnalyzeImage, AnalysisResponse, analyzeStream, getHealthScore, HealthScoreInput, HealthScoreOutput } from '../services/api';
 import { mealLogger } from '../services/mealLogger';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
 import Slider from '@react-native-community/slider';
@@ -86,6 +86,8 @@ export default function AnalyzeScreen() {
   const [gotIngr, setGotIngr] = useState(false);
   const [gotCalories, setGotCalories] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [healthScore, setHealthScore] = useState<HealthScoreOutput | null>(null);
+  const [healthScoreLoading, setHealthScoreLoading] = useState(false);
 
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
@@ -176,6 +178,8 @@ export default function AnalyzeScreen() {
       setGotRecognize(false);
       setGotIngr(false);
       setGotCalories(false);
+      setHealthScore(null);
+      setHealthScoreLoading(false);
       // Streaming flow exactly like web UI with Gemini only (no LogMeal)
       const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
       const acc: any = {};
@@ -213,6 +217,17 @@ export default function AnalyzeScreen() {
               setGrams(baseGrams);
               setTotals(computeTotals(ui, baseGrams));
             }
+            // Trigger health score fetch
+            try {
+              const hsInput = buildHealthScoreInput(res);
+              if (hsInput) {
+                setHealthScoreLoading(true);
+                getHealthScore(hsInput)
+                  .then((hs) => setHealthScore(hs))
+                  .catch(() => {})
+                  .finally(() => setHealthScoreLoading(false));
+              }
+            } catch {}
             try {
               mealLogger.logFromAnalysis(res, 'gemini', 'gemini');
             } catch {}
@@ -228,6 +243,78 @@ export default function AnalyzeScreen() {
       setLoading(false);
     }
   };
+
+  function buildHealthScoreInput(res: AnalysisResponse): HealthScoreInput | null {
+    if (
+      typeof res?.total_kcal === 'number' &&
+      typeof res?.total_grams === 'number' &&
+      typeof res?.total_fat_g === 'number' &&
+      typeof res?.total_protein_g === 'number' &&
+      Array.isArray(res?.items_grams) &&
+      res.items_grams.length > 0
+    ) {
+      return {
+        total_kcal: res.total_kcal,
+        total_grams: res.total_grams,
+        total_fat_g: res.total_fat_g,
+        total_protein_g: res.total_protein_g,
+        items_grams: res.items_grams.map((it) => ({ name: it.name, grams: it.grams })),
+        kcal_confidence: typeof res.kcal_confidence === 'number' ? res.kcal_confidence : 1.0,
+        use_confidence_dampen: false,
+      };
+    }
+    return null;
+  }
+
+  function renderHealthStars(score10: number) {
+    const roundedToHalf = Math.round((score10 / 2) * 2) / 2; // 0..5 in 0.5 steps
+    const color = getHealthColor(score10);
+    const fullStars = Math.floor(roundedToHalf);
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {Array.from({ length: 5 }, (_, idx) => {
+          const i = idx + 1;
+          const isFull = i <= fullStars;
+          const isHalf = !isFull && Math.abs(i - roundedToHalf - 0.5) < 1e-6;
+          const name = isFull ? 'star' : isHalf ? 'star-half-full' : 'star-outline';
+          return (
+            <MaterialCommunityIcons
+              key={idx}
+              name={name as any}
+              size={18}
+              color={isFull || isHalf ? color : '#c7c7c7'}
+              style={styles.iconAlignUp}
+            />
+          );
+        })}
+      </View>
+    );
+  }
+
+  function getHealthColor(score10: number): string {
+    // Clamp score
+    const s = Math.max(0, Math.min(10, score10));
+    // Define stops: 0=red, 5=yellow, 10=green
+    const red = { r: 239, g: 68, b: 68 };    // #ef4444
+    const yellow = { r: 245, g: 158, b: 11 }; // #f59e0b
+    const green = { r: 34, g: 197, b: 94 };   // #22c55e
+    const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+    const toHex = (n: number) => n.toString(16).padStart(2, '0');
+
+    if (s <= 5) {
+      const t = s / 5; // 0..1 from red to yellow
+      const r = lerp(red.r, yellow.r, t);
+      const g = lerp(red.g, yellow.g, t);
+      const b = lerp(red.b, yellow.b, t);
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    } else {
+      const t = (s - 5) / 5; // 0..1 from yellow to green
+      const r = lerp(yellow.r, green.r, t);
+      const g = lerp(yellow.g, green.g, t);
+      const b = lerp(yellow.b, green.b, t);
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+  }
 
   // No auto-analysis; user must press Analyze
 
@@ -412,6 +499,17 @@ export default function AnalyzeScreen() {
                   );
                 })()}
                 {/* Removed description under macros per request */}
+                {/* Health Score below macros */}
+                <View style={{ marginTop: 10 }}>
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.tileTitle}>Health Score</Text>
+                    {healthScoreLoading ? (
+                      <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>analyzing…</Text></View>
+                    ) : healthScore ? (
+                      renderHealthStars(healthScore.health_score)
+                    ) : null}
+                  </View>
+                </View>
               </>
             ) : (
               <View style={[styles.grid4, { width: '100%' }]}>

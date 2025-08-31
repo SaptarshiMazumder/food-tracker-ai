@@ -45,8 +45,40 @@ export interface AnalysisResponse {
   total_ms?: number;
   timings?: Record<string, number>;
   notes?: string;
+  // Optional health score result from backend
+  health_score?: HealthScoreOutput;
   error?: string;
   msg?: string;
+}
+
+// Health Score types and API
+export interface HealthScoreInput {
+  total_kcal: number;
+  total_grams: number;
+  total_fat_g: number;
+  total_protein_g: number;
+  items_grams: Array<{ name: string; grams: number }>;
+  kcal_confidence: number;
+  use_confidence_dampen: boolean;
+}
+
+export interface HealthComponentScores {
+  energy_density: number;
+  protein_density: number;
+  fat_balance: number;
+  carb_quality: number;
+  sodium_proxy: number;
+  whole_foods: number;
+}
+
+export interface HealthScoreOutput {
+  health_score: number; // 1..10
+  component_scores: HealthComponentScores;
+  weights: { [k: string]: number };
+  drivers_positive: string[];
+  drivers_negative: string[];
+  debug: { [k: string]: number };
+  classification: Array<{ name: string; category: string }>;
 }
 
 export async function uploadAnalyzeImage(uriOrUris: string | string[], options?: { model?: string; useLogmeal?: boolean }): Promise<AnalysisResponse> {
@@ -137,6 +169,10 @@ export async function analyzeStream(
   }
 
   return iterator();
+}
+
+export async function getHealthScore(input: HealthScoreInput): Promise<HealthScoreOutput> {
+  return apiRequest<HealthScoreOutput>('/health-score', { method: 'POST', body: input });
 }
 
 
