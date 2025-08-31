@@ -1,4 +1,4 @@
-import { AnalysisResponse } from './api';
+import { AnalysisResponse, HealthScoreOutput } from './api';
 
 export type AnalysisMode = 'logmeal' | 'gemini' | 'ab_test' | 'fallback' | string;
 
@@ -38,6 +38,7 @@ export interface LoggedMeal {
   service_used: string;
   image_url?: string;
   overlay_url?: string;
+  health_score?: HealthScoreOutput;
 }
 
 export interface DailyMealTotals {
@@ -178,11 +179,25 @@ class MealLogger {
       service_used: serviceUsed,
       image_url: imageUrl,
       overlay_url: overlayUrl,
+      health_score: api?.health_score,
     };
     this.meals = [...this.meals, meal];
     this.persist();
     this.notify();
     return meal;
+  }
+
+  updateMeal(mealId: string, patch: Partial<LoggedMeal>): void {
+    const idx = this.meals.findIndex((m) => m.id === mealId);
+    if (idx === -1) return;
+    const updated: LoggedMeal = { ...this.meals[idx], ...patch } as LoggedMeal;
+    this.meals = [
+      ...this.meals.slice(0, idx),
+      updated,
+      ...this.meals.slice(idx + 1),
+    ];
+    this.persist();
+    this.notify();
   }
 
   duplicateToToday(existing: LoggedMeal): LoggedMeal {

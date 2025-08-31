@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal, Platform, Image } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Colors } from '../theme/colors';
 import Card from '../components/Card';
 import { mealLogger, LoggedMeal, DailyMealLog } from '../services/mealLogger';
 import { MaterialIcons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Text as SvgText } from 'react-native-svg';
+import { getHealthScore, HealthScoreInput, HealthScoreOutput } from '../services/api';
 
 function startOfWeek(date: Date): Date {
   const d = new Date(date);
@@ -31,11 +34,14 @@ export default function LogScreen() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<LoggedMeal[]>([]);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dateModalVisible, setDateModalVisible] = useState<boolean>(false);
   const [actionMeal, setActionMeal] = useState<LoggedMeal | null>(null);
   const [actionType, setActionType] = useState<'move' | 'copy' | null>(null);
   const [targetDateObj, setTargetDateObj] = useState<Date | null>(null);
+  const [detailMeal, setDetailMeal] = useState<LoggedMeal | null>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
+  const [detailHealth, setDetailHealth] = useState<HealthScoreOutput | null>(null);
+  const [detailHealthLoading, setDetailHealthLoading] = useState<boolean>(false);
 
   useEffect(() => {
     setLog(mealLogger.getDailyMealLog(selectedDate));
@@ -87,13 +93,7 @@ export default function LogScreen() {
     setSearchResults([]);
   }
 
-  function toggle(mealId: string) {
-    setExpanded((prev) => {
-      const next = new Set(Array.from(prev));
-      if (next.has(mealId)) next.delete(mealId); else next.add(mealId);
-      return next;
-    });
-  }
+  // Removed dropdown/expand behavior
 
   function previousWeek() { setCurrentWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() - 7); return startOfWeek(d); }); }
   function nextWeek() { setCurrentWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() + 7); return startOfWeek(d); }); }
@@ -115,6 +115,105 @@ export default function LogScreen() {
     setActionType(type || null);
     setTargetDateObj(new Date(meal.date + 'T00:00:00'));
     setDateModalVisible(true);
+  }
+
+  function openDetail(meal: LoggedMeal) {
+    setDetailMeal(meal);
+    setDetailModalVisible(true);
+    // If health score was persisted from AnalyzeScreen, use it; else fetch once and store
+    if (meal.health_score) {
+      setDetailHealth(meal.health_score);
+      return;
+    }
+    if (
+      typeof meal.total_kcal === 'number' &&
+      typeof meal.total_grams === 'number' &&
+      typeof meal.total_fat_g === 'number' &&
+      typeof meal.total_protein_g === 'number' &&
+      Array.isArray(meal.items_grams) && meal.items_grams.length > 0
+    ) {
+      const input: HealthScoreInput = {
+        total_kcal: meal.total_kcal || 0,
+        total_grams: meal.total_grams || 0,
+        total_fat_g: meal.total_fat_g || 0,
+        total_protein_g: meal.total_protein_g || 0,
+        items_grams: meal.items_grams.map((it) => ({ name: it.name, grams: it.grams })),
+        kcal_confidence: meal.kcal_confidence || 1.0,
+        use_confidence_dampen: false,
+      };
+      setDetailHealthLoading(true);
+      getHealthScore(input)
+        .then((hs) => {
+          setDetailHealth(hs);
+          mealLogger.updateMeal(meal.id, { health_score: hs });
+        })
+        .catch(() => {})
+        .finally(() => setDetailHealthLoading(false));
+    }
+  }
+
+  function closeDetail() {
+    setDetailModalVisible(false);
+    setDetailMeal(null);
+    setDetailHealth(null);
+    setDetailHealthLoading(false);
+  }
+
+  function CircularProgress({ size, trackWidth = 4, progressWidth = 7, progress, trackColor = Colors.sliderInactive, progressColor = Colors.primary, trackOpacity = 0.5, progressOpacity = 1, labelColor = Colors.neutralText, labelFontSize = 11, labelDy = 0 }: { size: number; trackWidth?: number; progressWidth?: number; progress: number; trackColor?: string; progressColor?: string; trackOpacity?: number; progressOpacity?: number; labelColor?: string; labelFontSize?: number; labelDy?: number; }) {
+    const clamped = Math.max(0, Math.min(1, progress || 0));
+    const maxStroke = Math.max(trackWidth, progressWidth);
+    const radius = (size - maxStroke) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const dashOffset = circumference * (1 - clamped);
+    const center = size / 2;
+    return (
+      <Svg width={size} height={size}>
+        <Circle cx={center} cy={center} r={radius} stroke={trackColor} strokeOpacity={trackOpacity} strokeWidth={trackWidth} fill="none" />
+        <Circle cx={center} cy={center} r={radius} stroke={progressColor} strokeOpacity={progressOpacity} strokeWidth={progressWidth} strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={dashOffset} strokeLinecap="round" fill="none" transform={`rotate(-90 ${center} ${center})`} />
+        <SvgText x={center} y={center} dy={labelDy} fill={labelColor} fontSize={labelFontSize} fontWeight="500" textAnchor="middle" alignmentBaseline="middle">{`${Math.round(clamped * 100)}%`}</SvgText>
+      </Svg>
+    );
+  }
+
+  function getHealthColor(score10: number): string {
+    const s = Math.max(0, Math.min(10, score10));
+    const red = { r: 239, g: 68, b: 68 };
+    const yellow = { r: 245, g: 158, b: 11 };
+    const green = { r: 34, g: 197, b: 94 };
+    const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+    const toHex = (n: number) => n.toString(16).padStart(2, '0');
+    if (s <= 5) {
+      const t = s / 5;
+      const r = lerp(red.r, yellow.r, t);
+      const g = lerp(red.g, yellow.g, t);
+      const b = lerp(red.b, yellow.b, t);
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    } else {
+      const t = (s - 5) / 5;
+      const r = lerp(yellow.r, green.r, t);
+      const g = lerp(yellow.g, green.g, t);
+      const b = lerp(yellow.b, green.b, t);
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+  }
+
+  function renderHealthStars(score10: number) {
+    const roundedToHalf = Math.round((score10 / 2) * 2) / 2;
+    const color = getHealthColor(score10);
+    const fullStars = Math.floor(roundedToHalf);
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {Array.from({ length: 5 }, (_, idx) => {
+          const i = idx + 1;
+          const isFull = i <= fullStars;
+          const isHalf = !isFull && Math.abs(i - roundedToHalf - 0.5) < 1e-6;
+          const name = isFull ? 'star' : isHalf ? 'star-half-full' : 'star-outline';
+          return (
+            <MaterialCommunityIcons key={idx} name={name as any} size={18} color={isFull || isHalf ? color : '#c7c7c7'} style={styles.iconAlignUp} />
+          );
+        })}
+      </View>
+    );
   }
 
   function closeDateModal() {
@@ -245,68 +344,32 @@ export default function LogScreen() {
           <View style={{ padding: 12 }}>
             {log.meals.map((m, idx) => (
               <View key={m.id} style={styles.itemContainer}>
-                <TouchableOpacity onPress={() => toggle(m.id)} style={styles.rowBetween}>
+                <TouchableOpacity onPress={() => openDetail(m)} style={styles.rowBetween}>
                   <View style={{ flex: 1 }}>
                     <View style={styles.rowBetween}>
                       <Text style={styles.mealTitle}>{m.dish || 'Meal'}</Text>
                       <Text style={styles.time}>{formatTime(m.timestamp)}</Text>
                     </View>
                     <View style={styles.rowBetween}>
-                      {!expanded.has(m.id) ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <View style={styles.neutralBubble}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              <MaterialCommunityIcons name="fire" size={12} color={Colors.primary} />
-                              <Text style={styles.neutralBubbleText}>{(m.total_kcal || 0).toFixed(0)}</Text>
-                            </View>
-                          </View>
-                          <View style={styles.neutralBubble}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              <MaterialCommunityIcons name="dumbbell" size={12} color={Colors.primary} />
-                              <Text style={styles.neutralBubbleText}>{(m.total_protein_g || 0).toFixed(1)} g</Text>
-                            </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={styles.neutralBubble}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <MaterialCommunityIcons name="fire" size={12} color={Colors.primary} />
+                            <Text style={styles.neutralBubbleText}>{(m.total_kcal || 0).toFixed(0)}</Text>
                           </View>
                         </View>
-                      ) : <View />}
+                        <View style={styles.neutralBubble}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <MaterialCommunityIcons name="dumbbell" size={12} color={Colors.primary} />
+                            <Text style={styles.neutralBubbleText}>{(m.total_protein_g || 0).toFixed(1)} g</Text>
+                          </View>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                  <MaterialIcons name={expanded.has(m.id) ? 'expand-more' : 'chevron-right'} size={20} color="#999" />
+                  <MaterialIcons name={"chevron-right"} size={20} color="#999" />
                 </TouchableOpacity>
-                {expanded.has(m.id) ? (
-                  <View style={{ marginTop: 8 }}>
-                    <View style={styles.nutritionGrid}>
-                      <View style={styles.nutItem}><Text style={styles.nutLabel}>kcal</Text><Text style={styles.nutValue}>{(m.total_kcal || 0).toFixed(0)}</Text></View>
-                      <View style={styles.nutItem}><Text style={styles.nutLabel}>protein</Text><Text style={styles.nutValue}>{(m.total_protein_g || 0).toFixed(1)} g</Text></View>
-                      <View style={styles.nutItem}><Text style={styles.nutLabel}>carbs</Text><Text style={styles.nutValue}>{(m.total_carbs_g || 0).toFixed(1)} g</Text></View>
-                      <View style={styles.nutItem}><Text style={styles.nutLabel}>fat</Text><Text style={styles.nutValue}>{(m.total_fat_g || 0).toFixed(1)} g</Text></View>
-                      <View style={styles.nutItem}><Text style={styles.nutLabel}>total</Text><Text style={styles.nutValue}>{(m.total_grams || 0).toFixed(0)} g</Text></View>
-                    </View>
-                    {Array.isArray(m.ingredients_detected) && m.ingredients_detected.length > 0 ? (
-                      <View style={{ marginTop: 8 }}>
-                        <Text style={styles.ingredientsLabel}>Ingredients:</Text>
-                        <View style={styles.ingredientsWrap}>
-                          {m.ingredients_detected.map((ing, i) => (
-                            <Text key={i} style={styles.ingredientChip}>{ing}</Text>
-                          ))}
-                        </View>
-                      </View>
-                    ) : null}
-                    {m.notes ? (
-                      <View style={{ marginTop: 6 }}>
-                        <Text style={styles.notesLabel}>Notes:</Text>
-                        <Text style={styles.notesText}>{m.notes}</Text>
-                      </View>
-                    ) : null}
-                    <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
-                      <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={() => openDateModal(m)}>
-                        <Text style={styles.btnTextPrimary}>Move/ Copy</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={[styles.btn, styles.btnRemove]} onPress={() => mealLogger.removeMeal(m.id)}>
-                        <Text style={styles.btnTextPrimary}>Remove</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : null}
+                {/* Removed inline dropdown details to rely on detail modal */}
                 {idx < log.meals.length - 1 ? <View style={styles.separator} /> : null}
               </View>
             ))}
@@ -388,6 +451,168 @@ export default function LogScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Detail Modal */}
+      <Modal visible={detailModalVisible} transparent animationType="slide" onRequestClose={closeDetail}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { width: '92%' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 18, fontWeight: '600' }}>Meal Details</Text>
+              <TouchableOpacity style={[styles.btn]} onPress={closeDetail}>
+                <MaterialIcons name="close" size={18} color={Colors.neutralText} />
+              </TouchableOpacity>
+            </View>
+
+            {detailMeal ? (
+              <ScrollView style={{ marginTop: 8, maxHeight: 520 }}>
+                {/* Image(s) */}
+                {detailMeal.image_url ? (
+                  <Image source={{ uri: detailMeal.image_url }} style={{ width: '100%', height: 220, borderRadius: 10, backgroundColor: '#f4f4f4' }} />
+                ) : null}
+
+                {/* 1. FOOD */}
+                <Card style={{ marginTop: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.sectionTitle}>1. FOOD</Text>
+                    <Ionicons name="fast-food-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                  </View>
+                  {detailMeal.dish ? <Text style={styles.mealTitle}>{detailMeal.dish}</Text> : null}
+                  {Array.isArray(detailMeal.ingredients_detected) && detailMeal.ingredients_detected.length > 0 ? (
+                    <View style={styles.ingredientsWrap}>
+                      {detailMeal.ingredients_detected.map((ing, i) => (
+                        <Text key={i} style={styles.ingredientChip}>{ing}</Text>
+                      ))}
+                    </View>
+                  ) : null}
+                </Card>
+
+                {/* 2. MACROS */}
+                <Card>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.sectionTitle}>2. MACROS</Text>
+                      <Ionicons name="stats-chart-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                    </View>
+                    {typeof detailMeal.total_grams === 'number' ? (
+                      <View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{detailMeal.total_grams} g total</Text></View>
+                    ) : null}
+                  </View>
+                  {Array.isArray(detailMeal.items_nutrition) && detailMeal.items_nutrition.length > 0 ? (
+                    (() => {
+                      const totalG = typeof detailMeal.total_grams === 'number' && detailMeal.total_grams > 0 ? detailMeal.total_grams : 0;
+                      const p = totalG > 0 && typeof detailMeal.total_protein_g === 'number' ? detailMeal.total_protein_g / totalG : 0;
+                      const c = totalG > 0 && typeof detailMeal.total_carbs_g === 'number' ? detailMeal.total_carbs_g / totalG : 0;
+                      const f = totalG > 0 && typeof detailMeal.total_fat_g === 'number' ? detailMeal.total_fat_g / totalG : 0;
+                      return (
+                        <View style={styles.grid4}>
+                          <View style={styles.tile}>
+                            <View style={styles.rowBetween}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={styles.tileTitle}>Calories</Text>
+                                <MaterialCommunityIcons name="fire" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                              </View>
+                            </View>
+                            <Text style={styles.tileValue}>{detailMeal.total_kcal}</Text>
+                          </View>
+                          <View style={styles.tile}>
+                            <View style={styles.ringRightOverlay} pointerEvents="none">
+                              <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={p} trackOpacity={0.35} progressColor={Colors.macroProtein} labelColor={Colors.neutralText} labelFontSize={14} labelDy={2} />
+                            </View>
+                            <View style={styles.ringedContent}>
+                              <View style={styles.rowBetween}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                  <Text style={styles.tileTitle}>Protein</Text>
+                                  <MaterialCommunityIcons name="dumbbell" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                                </View>
+                              </View>
+                              <Text style={styles.tileValue}>{detailMeal.total_protein_g} g</Text>
+                            </View>
+                          </View>
+                          <View style={styles.tile}>
+                            <View style={styles.ringRightOverlay} pointerEvents="none">
+                              <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={c} trackOpacity={0.35} progressColor={Colors.macroCarbs} labelColor={Colors.neutralText} labelFontSize={14} labelDy={2} />
+                            </View>
+                            <View style={styles.ringedContent}>
+                              <View style={styles.rowBetween}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                  <Text style={styles.tileTitle}>Carbs</Text>
+                                  <MaterialCommunityIcons name="bread-slice-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                                </View>
+                              </View>
+                              <Text style={styles.tileValue}>{detailMeal.total_carbs_g} g</Text>
+                            </View>
+                          </View>
+                          <View style={styles.tile}>
+                            <View style={styles.ringRightOverlay} pointerEvents="none">
+                              <CircularProgress size={56} trackWidth={4} progressWidth={7} progress={f} trackOpacity={0.35} progressColor={Colors.macroFat} labelColor={Colors.neutralText} labelFontSize={14} labelDy={2} />
+                            </View>
+                            <View style={styles.ringedContent}>
+                              <View style={styles.rowBetween}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                  <Text style={styles.tileTitle}>Fat</Text>
+                                  <MaterialCommunityIcons name="water-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                                </View>
+                              </View>
+                              <Text style={styles.tileValue}>{detailMeal.total_fat_g} g</Text>
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    })()
+                  ) : null}
+                  {/* Health score */}
+                  <View style={{ marginTop: 10 }}>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.tileTitle}>Health Score</Text>
+                      {detailHealth ? (
+                        renderHealthStars(detailHealth.health_score)
+                      ) : null}
+                    </View>
+                  </View>
+                </Card>
+
+                {/* 3. INGREDIENTS PORTIONS */
+                }
+                <Card>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.sectionTitle}>3. INGREDIENTS PORTIONS</Text>
+                      <Ionicons name="scale-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
+                    </View>
+                  </View>
+                  {Array.isArray(detailMeal.items_grams) && detailMeal.items_grams.length > 0 ? (
+                    <>
+                      {detailMeal.items_grams.map((it, i) => (
+                        <View key={i} style={styles.rowBetween}>
+                          <Text>{it.name}</Text>
+                          <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>{it.grams} g</Text></View>
+                        </View>
+                      ))}
+                    </>
+                  ) : null}
+                </Card>
+
+                {/* Actions at bottom */}
+                <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                  <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={() => openDateModal(detailMeal)}>
+                    <Text style={styles.btnTextPrimary}>Move/ Copy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.btn, styles.btnRemove]}
+                    onPress={() => {
+                      mealLogger.removeMeal(detailMeal.id);
+                      closeDetail();
+                    }}
+                  >
+                    <Text style={styles.btnTextPrimary}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+
+              </ScrollView>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -424,6 +649,13 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 },
   searchResults: { marginTop: 16, paddingHorizontal: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
+  iconAlignUp: { transform: [{ translateY: -2 }] },
+  grid4: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  tile: { width: '48%', backgroundColor: '#fafafa', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#eee' },
+  tileTitle: { color: '#666', marginBottom: 4 },
+  tileValue: { fontSize: 16, fontWeight: '600' },
+  ringRightOverlay: { position: 'absolute', top: 0, bottom: 0, right: 6, width: 64, alignItems: 'center', justifyContent: 'center' },
+  ringedContent: { paddingRight: 72 },
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e9ecef', borderRadius: 8, padding: 12, marginBottom: 10 },
   searchCard: { backgroundColor: '#fff3cd', borderColor: '#ffeaa7' },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

@@ -88,6 +88,7 @@ export default function AnalyzeScreen() {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [healthScore, setHealthScore] = useState<HealthScoreOutput | null>(null);
   const [healthScoreLoading, setHealthScoreLoading] = useState(false);
+  const [loggedMealId, setLoggedMealId] = useState<string | null>(null);
 
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
@@ -180,6 +181,7 @@ export default function AnalyzeScreen() {
       setGotCalories(false);
       setHealthScore(null);
       setHealthScoreLoading(false);
+      setLoggedMealId(null);
       // Streaming flow exactly like web UI with Gemini only (no LogMeal)
       const stream = await analyzeStream(selectedUris, { model: 'gemini-2.5-pro', useLogmeal: false });
       const acc: any = {};
@@ -207,32 +209,40 @@ export default function AnalyzeScreen() {
           }
         } else if (ev.phase === 'done') {
           Object.assign(acc, ev.data);
-          setResult((prev) => {
-            const res = { ...(prev || {}), ...acc } as AnalysisResponse;
-            // Ensure UI items/totals are computed if not already
-            if (uiItems.length === 0 && Array.isArray(res.items_grams) && Array.isArray(res.items_nutrition)) {
-              const ui = buildUiItems(res);
-              setUiItems(ui);
-              const baseGrams = ui.map((u) => u.baseGrams);
-              setGrams(baseGrams);
-              setTotals(computeTotals(ui, baseGrams));
+          // Compose final result snapshot
+          const finalRes = { ...(result || {}), ...acc } as AnalysisResponse;
+          // Ensure UI items/totals are computed if not already
+          if (uiItems.length === 0 && Array.isArray(finalRes.items_grams) && Array.isArray(finalRes.items_nutrition)) {
+            const ui = buildUiItems(finalRes);
+            setUiItems(ui);
+            const baseGrams = ui.map((u) => u.baseGrams);
+            setGrams(baseGrams);
+            setTotals(computeTotals(ui, baseGrams));
+          }
+          setResult(finalRes);
+          // Log meal and capture id
+          try {
+            const logged = mealLogger.logFromAnalysis(finalRes, 'gemini', 'gemini');
+            setLoggedMealId(logged.id);
+          } catch {}
+          // Trigger health score fetch and persist
+          try {
+            const hsInput = buildHealthScoreInput(finalRes);
+            if (hsInput) {
+              setHealthScoreLoading(true);
+              getHealthScore(hsInput)
+                .then((hs) => {
+                  setHealthScore(hs);
+                  try {
+                    if (loggedMealId) {
+                      mealLogger.updateMeal(loggedMealId, { health_score: hs });
+                    }
+                  } catch {}
+                })
+                .catch(() => {})
+                .finally(() => setHealthScoreLoading(false));
             }
-            // Trigger health score fetch
-            try {
-              const hsInput = buildHealthScoreInput(res);
-              if (hsInput) {
-                setHealthScoreLoading(true);
-                getHealthScore(hsInput)
-                  .then((hs) => setHealthScore(hs))
-                  .catch(() => {})
-                  .finally(() => setHealthScoreLoading(false));
-              }
-            } catch {}
-            try {
-              mealLogger.logFromAnalysis(res, 'gemini', 'gemini');
-            } catch {}
-            return res;
-          });
+          } catch {}
           setHasAnalyzed(true);
           break;
         }
