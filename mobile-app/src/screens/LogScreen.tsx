@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal, Platform } from 'react-native';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Colors } from '../theme/colors';
 import Card from '../components/Card';
 import { mealLogger, LoggedMeal, DailyMealLog } from '../services/mealLogger';
@@ -31,6 +32,10 @@ export default function LogScreen() {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<LoggedMeal[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [dateModalVisible, setDateModalVisible] = useState<boolean>(false);
+  const [actionMeal, setActionMeal] = useState<LoggedMeal | null>(null);
+  const [actionType, setActionType] = useState<'move' | 'copy' | null>(null);
+  const [targetDateObj, setTargetDateObj] = useState<Date | null>(null);
 
   useEffect(() => {
     setLog(mealLogger.getDailyMealLog(selectedDate));
@@ -96,6 +101,35 @@ export default function LogScreen() {
     const today = new Date().toISOString().split('T')[0];
     setSelectedDate(today);
     setCurrentWeekStart(startOfWeek(new Date()));
+  }
+
+  function formatYMD(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function openDateModal(meal: LoggedMeal, type?: 'move' | 'copy') {
+    setActionMeal(meal);
+    setActionType(type || null);
+    setTargetDateObj(new Date(meal.date + 'T00:00:00'));
+    setDateModalVisible(true);
+  }
+
+  function closeDateModal() {
+    setDateModalVisible(false);
+    setActionMeal(null);
+    setActionType(null);
+    setTargetDateObj(null);
+  }
+
+  function confirmDateAction() {
+    if (!actionMeal || !actionType) return;
+    const target = targetDateObj ? formatYMD(targetDateObj) : null;
+    if (!target) return;
+    if (actionType === 'move') mealLogger.moveMealToDate(actionMeal.id, target); else mealLogger.duplicateToDate(actionMeal, target);
+    closeDateModal();
   }
 
   return (
@@ -251,7 +285,10 @@ export default function LogScreen() {
                         <Text style={styles.notesText}>{m.notes}</Text>
                       </View>
                     ) : null}
-                    <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'flex-end' }}>
+                    <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                      <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={() => openDateModal(m)}>
+                        <Text style={styles.btnTextPrimary}>Move/ Copy</Text>
+                      </TouchableOpacity>
                       <TouchableOpacity style={[styles.btn, styles.btnRemove]} onPress={() => mealLogger.removeMeal(m.id)}>
                         <Text style={styles.btnTextPrimary}>Remove</Text>
                       </TouchableOpacity>
@@ -269,6 +306,76 @@ export default function LogScreen() {
           </View>
         )}
       </Card>
+      {/* Date Modal */}
+      <Modal visible={dateModalVisible} transparent animationType="fade" onRequestClose={closeDateModal}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
+              {actionType ? (actionType === 'move' ? 'Move meal to date' : 'Copy meal to date') : 'Move or copy meal'}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+              <TouchableOpacity
+                style={[styles.choicePill, actionType === 'move' && styles.choicePillSelected]}
+                onPress={() => setActionType('move')}
+              >
+                <Text style={[styles.choicePillText, actionType === 'move' && styles.choicePillTextSelected]}>Move</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.choicePill, actionType === 'copy' && styles.choicePillSelected]}
+                onPress={() => setActionType('copy')}
+              >
+                <Text style={[styles.choicePillText, actionType === 'copy' && styles.choicePillTextSelected]}>Copy</Text>
+              </TouchableOpacity>
+            </View>
+            {Platform.OS === 'ios' ? (
+              <View>
+                <DateTimePicker
+                  value={targetDateObj || new Date()}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (date) setTargetDateObj(date);
+                  }}
+                />
+                <Text style={{ marginTop: 6, color: '#666' }}>{targetDateObj ? targetDateObj.toLocaleDateString() : ''}</Text>
+              </View>
+            ) : (
+              <View>
+                <Text style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>Selected: {targetDateObj ? targetDateObj.toLocaleDateString() : ''}</Text>
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnLight]}
+                  onPress={() => {
+                    DateTimePickerAndroid.open({
+                      value: targetDateObj || new Date(),
+                      mode: 'date',
+                      onChange: (event, date) => {
+                        if (event.type === 'set' && date) setTargetDateObj(date);
+                      },
+                    });
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name="calendar-today" size={16} color={Colors.primary} />
+                    <Text style={{ fontWeight: '600' }}>Select date</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+              <TouchableOpacity style={[styles.btn]} onPress={closeDateModal}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnPrimary, (!targetDateObj || !actionType) && { opacity: 0.5 }] as any}
+                onPress={confirmDateAction}
+                disabled={!targetDateObj || !actionType}
+              >
+                <Text style={styles.btnTextPrimary}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -283,6 +390,9 @@ const styles = StyleSheet.create({
   btnClear: { backgroundColor: '#6c757d', borderColor: '#6c757d' },
   btnAdd: { backgroundColor: '#28a745', borderColor: '#28a745' },
   btnRemove: { backgroundColor: '#dc3545', borderColor: '#dc3545' },
+  btnMove: { backgroundColor: '#007bff', borderColor: '#007bff' },
+  btnCopy: { backgroundColor: '#17a2b8', borderColor: '#17a2b8' },
+  btnLight: { backgroundColor: '#ffffff', borderColor: '#ddd' },
   btnTextPrimary: { color: '#fff', fontWeight: '600' },
   calendar: { margin: 16, borderWidth: 1, borderColor: '#e9ecef', borderRadius: 8, overflow: 'hidden' },
   calendarHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#f8f9fa', borderBottomWidth: 1, borderBottomColor: '#e9ecef' },
@@ -334,6 +444,13 @@ const styles = StyleSheet.create({
   notesText: { fontSize: 14, color: '#666', fontStyle: 'italic' },
   itemContainer: { paddingVertical: 10 },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: '#e9ecef', marginVertical: 10 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
+  modalCard: { width: '86%', backgroundColor: '#fff', borderRadius: 10, padding: 16, borderWidth: 1, borderColor: '#e9ecef' },
+  dateInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 },
+  choicePill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
+  choicePillSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  choicePillText: { color: '#333', fontWeight: '600' },
+  choicePillTextSelected: { color: '#fff' },
 });
 
 

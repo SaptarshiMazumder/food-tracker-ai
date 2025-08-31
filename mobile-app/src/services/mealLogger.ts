@@ -198,6 +198,47 @@ class MealLogger {
     this.notify();
   }
 
+  duplicateToDate(existing: LoggedMeal, targetDate: string): LoggedMeal {
+    // Preserve time-of-day from existing timestamp, change just the date
+    const timeSource = new Date(existing.timestamp);
+    const [y, m, d] = targetDate.split('-').map((n) => parseInt(n, 10));
+    const ts = new Date(timeSource);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      ts.setFullYear(y, m - 1, d);
+    }
+    const dup: LoggedMeal = {
+      ...existing,
+      id: this.generateId(),
+      date: targetDate,
+      timestamp: ts.toISOString(),
+    };
+    this.meals = [...this.meals, dup];
+    this.persist();
+    this.notify();
+    return dup;
+  }
+
+  moveMealToDate(mealId: string, targetDate: string): void {
+    const idx = this.meals.findIndex((m) => m.id === mealId);
+    if (idx === -1) return;
+    const meal = this.meals[idx];
+    const timeSource = new Date(meal.timestamp);
+    const [y, m, d] = targetDate.split('-').map((n) => parseInt(n, 10));
+    const ts = new Date(timeSource);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      ts.setFullYear(y, m - 1, d);
+    }
+    const updated: LoggedMeal = { ...meal, date: targetDate, timestamp: ts.toISOString() };
+    // Replace in-place to preserve ordering semantics; then resort isn't necessary for per-day views
+    this.meals = [
+      ...this.meals.slice(0, idx),
+      updated,
+      ...this.meals.slice(idx + 1),
+    ];
+    this.persist();
+    this.notify();
+  }
+
   clearAll(): void {
     this.meals = [];
     this.persist();
