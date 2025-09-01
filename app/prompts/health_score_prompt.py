@@ -1,4 +1,9 @@
-You are a nutrition rater. Given a dish analysis payload, you will:
+# health_score_prompt.py
+"""
+Health score calculation prompt.
+"""
+
+HEALTH_SCORE_PROMPT = """You are a nutrition rater. Given a dish analysis payload, you will:
 
 1. For each item in `items_grams`, infer a category label from:
 
@@ -71,3 +76,4 @@ Constraints:
 - Never invent grams or macros; only use provided numbers.
 - If an item name is ambiguous, choose the most likely single category and proceed.
 - Respond with JSON and nothing else.
+"""

@@ -1,13 +1,13 @@
 import time
 from typing import List, Optional
 
-from ....gemini.gemini_ingredients import ingredients_from_image
+from ....services.food_analysis.food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
 from ..state.food_analysis_state import FoodAnalysisState
 from ..utils.timing import calculate_ms, print_node_summary
 
 def quantify_ingredients(state: FoodAnalysisState) -> FoodAnalysisState:
     """
-    Node that quantifies ingredients from food images using Gemini Vision.
+    Node that quantifies ingredients from food images using configured provider (Gemini or OpenAI).
     
     Args:
         state: Current graph state containing image paths and recognition results
@@ -17,12 +17,13 @@ def quantify_ingredients(state: FoodAnalysisState) -> FoodAnalysisState:
     """
     t0 = time.perf_counter()
 
-    # Use Gemini for ingredient detection and quantification
-    res = ingredients_from_image(
-        state["project"], 
-        state["location"], 
-        state["model"], 
-        state["image_paths"],
+    # Use configured provider for ingredient detection and quantification
+    quantifier = FoodAnalysisIngredientQuantifierFactory.create_quantifier()
+    res = quantifier.quantify_ingredients(
+        project=state["project"], 
+        location=state["location"], 
+        model=state["model"], 
+        image_paths=state["image_paths"],
         dish_hint=state.get("dish", ""), 
         ing_hint=state.get("ingredients", [])
     )
@@ -34,7 +35,10 @@ def quantify_ingredients(state: FoodAnalysisState) -> FoodAnalysisState:
     if "error" in res:
         state["error"] = f"ingredients_failed: {res['error']}"
         state["debug"]["ingredients_raw"] = res.get("raw")
-        print_node_summary("ing_quant(gemini)", False, timing_ms)
+        # Get provider for logging from environment variable
+        import os
+        provider = os.getenv("INGREDIENTS_PROVIDER", "gemini").lower()
+        print_node_summary(f"ing_quant({provider})", False, timing_ms)
         return state
 
     # Map results into state
@@ -55,8 +59,12 @@ def quantify_ingredients(state: FoodAnalysisState) -> FoodAnalysisState:
     oil_g = f"{oil.get('grams', 0)} g" if oil else "n/a"
     conf_str = f"{state['ing_conf']:.2f}" if state['ing_conf'] is not None else "n/a"
     
+    # Get provider for logging from environment variable
+    import os
+    provider = os.getenv("INGREDIENTS_PROVIDER", "gemini").lower()
+    
     print_node_summary(
-        "ing_quant(gemini)", 
+        f"ing_quant({provider})", 
         True, 
         timing_ms,
         items=n_items,

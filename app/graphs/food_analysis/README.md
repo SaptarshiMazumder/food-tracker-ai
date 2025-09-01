@@ -64,7 +64,7 @@ graphs/
 ### Basic Usage
 
 ```python
-from app.services.graphs import run_food_analysis
+from app.graphs import run_food_analysis
 
 # Run the complete workflow
 result = run_food_analysis(
@@ -83,7 +83,7 @@ print(f"Total grams: {result['total_grams']}")
 ### Direct Import (if needed)
 
 ```python
-from app.services.graphs.food_analysis import run_food_analysis, FoodAnalysisState
+from app.graphs.food_analysis import run_food_analysis, FoodAnalysisState
 
 # Direct access to the food analysis graph
 result = run_food_analysis(...)

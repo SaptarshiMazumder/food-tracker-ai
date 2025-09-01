@@ -23,8 +23,15 @@ class Config:
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
     
+    # OpenAI settings
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    
     # Model settings
     DEFAULT_MODEL = "gemini-2.5-pro"
+    DEFAULT_OPENAI_MODEL = "gpt-4o"
+    
+    # Provider selection
+    INGREDIENTS_PROVIDER = os.getenv("INGREDIENTS_PROVIDER", "gemini").lower()  # "gemini" or "openai"
     
     # RAG settings
     RAG_ARTIFACTS_DIR = "./mmfood-rag/artifacts"
