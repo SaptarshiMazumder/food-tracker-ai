@@ -33,7 +33,7 @@ A comprehensive workflow for analyzing food images that includes:
 **Usage:**
 
 ```python
-from app.services.graphs import run_food_analysis
+from app.graphs import run_food_analysis
 
 result = run_food_analysis(
     image_paths=["path/to/food.jpg"],

@@ -1,7 +1,7 @@
 import time
 from typing import List, Optional
 
-from ....food_analysis.food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
+from ....services.food_analysis.food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
 from ..state.food_analysis_state import FoodAnalysisState
 from ..utils.timing import calculate_ms, print_node_summary
 

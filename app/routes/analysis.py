@@ -3,7 +3,7 @@ import os
 from flask import Blueprint, request, jsonify, Response, current_app
 from werkzeug.utils import secure_filename
 
-from ..services.graphs import run_food_analysis
+from ..graphs import run_food_analysis
 from ..services.food_analysis.food_analysis_formatter import FoodAnalysisFormatter
 from ..services.food_analysis.food_analysis_streamer import FoodAnalysisStreamer
 from ..services.food_analysis.food_analysis_config import FoodAnalysisConfig

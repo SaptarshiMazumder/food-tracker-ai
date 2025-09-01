@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, render_template_string, request
 from werkzeug.exceptions import BadRequest
-from app.services.graphs.health_score import run_health_score
+from app.graphs.health_score import run_health_score
 
 health_bp = Blueprint('health', __name__)
 
