@@ -5,3 +5,5 @@ frontend/food-analyzer-ui/node_modules
 node_modules/
 images/
 artifacts/
+
+.venv/
