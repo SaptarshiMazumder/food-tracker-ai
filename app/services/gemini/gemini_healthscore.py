@@ -6,7 +6,7 @@ from app.models.health_score import HealthScoreInput, HealthScoreOutput
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-from prompts.health_score_prompt import HEALTH_SCORE_PROMPT
+from app.prompts.health_score_prompt import HEALTH_SCORE_PROMPT
 from google.genai import types
 
 def _load_prompt() -> str:

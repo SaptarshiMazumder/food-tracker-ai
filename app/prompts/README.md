@@ -26,7 +26,7 @@ prompts/
 Used by both Gemini and OpenAI for ingredient quantification:
 
 ```python
-from prompts.food_analysis.ingredients_prompt import build_ingredients_prompt
+from app.prompts.food_analysis.ingredients_prompt import build_ingredients_prompt
 
 # Build prompt with context
 prompt = build_ingredients_prompt(dish_hint="chicken stir fry", ing_hint=["chicken", "vegetables"])
@@ -37,7 +37,7 @@ prompt = build_ingredients_prompt(dish_hint="chicken stir fry", ing_hint=["chick
 Used for health score calculations:
 
 ```python
-from prompts.health_score_prompt import HEALTH_SCORE_PROMPT
+from app.prompts.health_score_prompt import HEALTH_SCORE_PROMPT
 
 # Use the prompt directly
 prompt = HEALTH_SCORE_PROMPT

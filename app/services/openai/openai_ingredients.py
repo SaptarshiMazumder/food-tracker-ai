@@ -112,7 +112,7 @@ def ingredients_from_image(project: Optional[str], location: str, model: str,
     import sys
     import os
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-    from prompts.food_analysis.ingredients_prompt import build_ingredients_prompt
+    from app.prompts.food_analysis.ingredients_prompt import build_ingredients_prompt
     prompt_block = build_ingredients_prompt(dish_hint, ing_hint)
 
     # Combine all parts for the message
