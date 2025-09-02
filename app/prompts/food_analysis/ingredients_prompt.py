@@ -31,7 +31,14 @@ Rules:
 - Exclude inedible items (plate, utensils, wrappers).
 - Compute total_grams as the sum of item grams.
 
-VERY IMPORTANT – realistic oil bounds for ONE serving:
+**VERY IMPORTANT –** Subtle accuracy guidance for typical single-plate portions:
+- Breads/flatbreads/buns/tortillas/wraps: prefer conservative weights for single pieces; avoid inflating a single slice/piece.
+- Cooked rice/pasta/noodles: anchor to realistic single-plate volumes; down-weight visual puffing, clumping, or plate curvature illusions.
+- When utensil or plate scale suggests smaller volumes, prefer the lower plausible grams consistent with the image context.
+- If uncertain between two plausible grams, choose the LOWER value.
+- You often tend to overestimate portions of bread and rice like food, do not overestimate them.
+
+**VERY IMPORTANT –** realistic oil bounds for ONE serving:
 - Stir-fry / fried rice: 8–20 g typical (prefer 10–15 g if unsure).
 - Sauté / pan-sear: 5–15 g typical.
 - Oil-based dressing: 10–25 g oil within the dressing.
@@ -39,6 +46,7 @@ VERY IMPORTANT – realistic oil bounds for ONE serving:
 - Boiled/steamed/baked with no visible gloss: 0–5 g.
 - Never exceed 40 g oil unless there is clear evidence of pooling or multiple servings. Never output 100 g.
 
+**VERY IMPORTANT –** ALWAYS estimate the size and portions of the food based on the size and depth of the dish/ bowl/ background/ any other visual cues.
 Before answering, sanity-check your oil estimate:
 - If not deep-fried and oil > 25 g, reduce to a plausible value in the ranges above.
 - If uncertain, choose the LOW end of the relevant range.

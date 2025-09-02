@@ -7,3 +7,9 @@ images/
 artifacts/
 
 .venv/
+# Python virtual environments (ignore anywhere in repo)
+venv/
+env/
+ENV/
+.virtualenv/
+.virtualenvs/
