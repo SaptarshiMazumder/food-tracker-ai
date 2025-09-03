@@ -7,7 +7,7 @@ from ..graphs import run_food_analysis
 from ..services.food_analysis.food_analysis_formatter import FoodAnalysisFormatter
 from ..services.food_analysis.food_analysis_streamer import FoodAnalysisStreamer
 from ..services.food_analysis.food_analysis_config import FoodAnalysisConfig
-from app.graphs.nutrition_analysis_graph import run_nutrition_analysis
+from app.graphs.nutrition_analysis import run_nutrition_analysis
 from ..utils.helpers import (
     gather_images, save_uploads, load_job_paths, save_job_manifest, 
     persist_history
