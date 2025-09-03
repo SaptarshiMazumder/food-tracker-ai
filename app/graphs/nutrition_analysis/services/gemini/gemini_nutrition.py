@@ -5,7 +5,7 @@ from typing import Dict, Any
 from app.services.shared.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
 from google.genai import types
 
-PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "nutrition_breakdown.md"
+PROMPT_PATH = Path(__file__).resolve().parents[4] / "prompts" / "nutrition_breakdown.md"
 
 def _load_prompt() -> str:
     return PROMPT_PATH.read_text(encoding="utf-8")

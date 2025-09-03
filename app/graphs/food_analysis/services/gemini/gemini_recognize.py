@@ -3,27 +3,16 @@ from typing import Dict, List
 from google.genai import types
 from app.services.shared.gemini.gemini_client import make_client, prepare_image_parts, extract_text_from_response, first_json_block, recognize_schema
 
-UTENSIL_SCALE = (
-    "If a standard fork or spoon is visible, use it as a scale reference:\n"
-    "- Typical dinner fork total length ~18–20 cm; head width ~2.5–3 cm.\n"
-    "- Typical tablespoon bowl width ~3.5–4.2 cm.\n"
-    "Leverage this to judge portion sizes realistically.\n"
-    "If multiple angles are provided, reconcile them and infer a single best description.\n"
-)
-
 def gemini_recognize_dish(project: str, location: str, model: str, image_paths: List[str]) -> Dict:
     client = make_client(project, location)
     img_parts = prepare_image_parts(client, image_paths)
-    sys_prompt = (
-        "You are a precise food recognizer. Return STRICT JSON ONLY:\n"
-        "{"
-        "\"dish\":\"<short canonical dish>\","
-        "\"ingredients\":[\"<3-12 likely ingredients, lowercase; include typical cooking fats/oils if implied (e.g., sesame oil for fried rice, olive oil for sautéed veg)>\"],"
-        "\"container\":\"plate|bowl|tray|cup|none\","
-        "\"confidence\":<0..1>"
-        "}\n\n"
-        + UTENSIL_SCALE
-    )
+    
+    # Use centralized prompt
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    from app.prompts.food_analysis.recognize_prompt import build_recognize_prompt
+    sys_prompt = build_recognize_prompt()
 
     # Attempt 1: plain (no tools), free-form JSON
     cfg1 = types.GenerateContentConfig(
