@@ -14,8 +14,8 @@ langgraph>=0.2
 
 # ---- Image helpers (serving/saving overlays, basic ops) ----
 Pillow>=10.3
-opencv-python-headless
-numpy>=1.26
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
 
 # ---- Utilities / typing ----
 pydantic>=2.7

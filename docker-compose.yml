@@ -1,0 +1,26 @@
+services:
+  backend:
+    image: food-analyzer-backend:local
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      target: local_service
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+      GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION:-global}
+      GOOGLE_CSE_ID: ${GOOGLE_CSE_ID:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INGREDIENTS_PROVIDER: ${INGREDIENTS_PROVIDER:-gemini}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-gemini-2.5-pro}
+      DEFAULT_OPENAI_MODEL: ${DEFAULT_OPENAI_MODEL:-gpt-4o}
+      RAG_ARTIFACTS_DIR: ${RAG_ARTIFACTS_DIR:-./mmfood-rag/artifacts}
+      UPLOAD_DIR: ${UPLOAD_DIR:-./app/uploads}
+    volumes:
+      - ./uploads:/app/app/uploads
+      - ./mmfood-rag/artifacts:/app/mmfood-rag/artifacts
+    restart: unless-stopped

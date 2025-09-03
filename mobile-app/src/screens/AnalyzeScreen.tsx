@@ -7,6 +7,7 @@ import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import PrimaryButton from '../components/PrimaryButton';
 import Card from '../components/Card';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { uploadAnalyzeImage, AnalysisResponse, analyzeStream, getHealthScore, HealthScoreInput, HealthScoreOutput } from '../services/api';
 import { mealLogger } from '../services/mealLogger';
 import { buildUiItems, computeTotals, UiItem, UiTotals } from '../services/uiBuilder';
@@ -166,6 +167,43 @@ export default function AnalyzeScreen() {
     }
 
     // If user cancelled or provider doesn't support multi-select, do nothing.
+  };
+
+  const onTakePhoto = async () => {
+    try {
+      // Clear previous selections and results
+      setSelectedUris([]);
+      setResult(null);
+      setUiItems([]);
+      setGrams([]);
+      setTotals(null);
+      setLoading(false);
+      setStarted(false);
+      setGotRecognize(false);
+      setGotIngr(false);
+      setGotCalories(false);
+
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed', 'Camera access is required to take a photo.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.9,
+        exif: false,
+      });
+      if (result.canceled) return;
+      const uri = result.assets && result.assets[0] ? result.assets[0].uri : undefined;
+      if (uri) {
+        setSelectedUris([uri]);
+        setHasAnalyzed(false);
+      }
+    } catch (e: any) {
+      Alert.alert('Camera error', e?.message || 'Could not open camera');
+    }
   };
 
   const onAnalyze = async () => {
@@ -336,7 +374,7 @@ export default function AnalyzeScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Removed explicit screen title per request */}
-      <Text style={styles.subtitle}>Upload a photo to extract ingredients and calories.</Text>
+      <Text style={styles.subtitle}>Upload or take a photo to extract ingredients and calories.</Text>
       {/* toast rendered outside ScrollView for visibility */}
       {/* Compute macro percentages for rings */}
       {(() => {
@@ -352,6 +390,17 @@ export default function AnalyzeScreen() {
           disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
           disabledTextStyle={{ color: Colors.neutralText }}
           leftIcon={<Ionicons name="images-outline" size={18} color="#ffffff" style={styles.iconAlignUp} />}
+        />
+        <View style={{ height: 8 }} />
+        <PrimaryButton
+          title="Take Photo"
+          onPress={onTakePhoto}
+          disabled={loading}
+          style={{ backgroundColor: Colors.primary, borderWidth: 0 }}
+          textStyle={{ color: '#ffffff' }}
+          disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
+          disabledTextStyle={{ color: Colors.neutralText }}
+          leftIcon={<Ionicons name="camera-outline" size={18} color="#ffffff" style={styles.iconAlignUp} />}
         />
         <Text style={{ marginTop: 6, color: '#777' }}>
           In the picker, long-press then tap multiple items to multi-select.
