@@ -1,6 +1,6 @@
 import time
 
-from app.services.gemini.gemini_healthscore import score_with_gemini
+from ..services.gemini.gemini_healthscore import score_with_gemini
 from ..state.health_score_state import HealthScoreState
 from ..utils.timing import calculate_ms, print_node_summary
 

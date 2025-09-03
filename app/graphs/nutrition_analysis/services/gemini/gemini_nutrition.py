@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from typing import Dict, Any
-from app.services.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
+from app.services.shared.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
 from google.genai import types
 
 PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "nutrition_breakdown.md"

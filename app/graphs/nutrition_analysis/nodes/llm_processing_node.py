@@ -1,6 +1,6 @@
 import time
 from typing import Dict, Any
-from app.services.gemini.gemini_nutrition import llm_nutrition_breakdown
+from ..services.gemini.gemini_nutrition import llm_nutrition_breakdown
 from ..state.nutrition_analysis_state import NutritionAnalysisState
 
 def process_nutrition_breakdown(state: NutritionAnalysisState) -> NutritionAnalysisState:

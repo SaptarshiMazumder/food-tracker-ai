@@ -1,7 +1,7 @@
 # app/services/gemini/gemini_healthscore.py
 import json
 from typing import Dict, Any
-from app.services.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
+from app.services.shared.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
 from app.models.health_score import HealthScoreInput, HealthScoreOutput
 import sys
 import os

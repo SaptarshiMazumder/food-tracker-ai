@@ -11,7 +11,7 @@ import json
 def test_llm_service():
     """Test the LLM service directly to see the actual response structure"""
     try:
-        from app.services.gemini.gemini_nutrition import llm_nutrition_breakdown
+        from app.graphs.nutrition_analysis.services.gemini.gemini_nutrition import llm_nutrition_breakdown
         
         print("Testing LLM service directly...")
         print("=" * 50)
