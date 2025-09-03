@@ -52,6 +52,8 @@ export interface AnalyzeResponse {
   overlay_url?: string | null;
   image_url?: string;
   total_ms?: number;
+  timings?: any;
+  health_score?: any;
 }
 
 // NEW: A/B test result interface
@@ -232,6 +234,31 @@ export class ApiService {
         catchError((err: HttpErrorResponse) => {
           return throwError(
             () => err.error || { error: 'health_score_failed' }
+          );
+        })
+      );
+  }
+
+  // NEW: Nutrition Analysis method
+  analyzeNutrition(hint: string, context?: any): Observable<AnalyzeResponse> {
+    const body = { hint, context };
+    console.log('[DEBUG] analyzeNutrition - Sending request:', {
+      url: `${this.base}/analyze_text`,
+      body: body,
+      hint: hint,
+      hintType: typeof hint,
+      hintLength: hint ? hint.length : 'undefined',
+      bodyStringified: JSON.stringify(body),
+    });
+
+    return this.http
+      .post<AnalyzeResponse>(`${this.base}/analyze_text`, body)
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          console.error('[DEBUG] analyzeNutrition - Error:', err);
+          console.error('[DEBUG] analyzeNutrition - Error body:', err.error);
+          return throwError(
+            () => err.error || { error: 'nutrition_analysis_failed' }
           );
         })
       );

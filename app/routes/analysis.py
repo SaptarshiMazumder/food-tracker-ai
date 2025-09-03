@@ -7,6 +7,7 @@ from ..graphs import run_food_analysis
 from ..services.food_analysis.food_analysis_formatter import FoodAnalysisFormatter
 from ..services.food_analysis.food_analysis_streamer import FoodAnalysisStreamer
 from ..services.food_analysis.food_analysis_config import FoodAnalysisConfig
+from app.graphs.nutrition_analysis_graph import run_nutrition_analysis
 from ..utils.helpers import (
     gather_images, save_uploads, load_job_paths, save_job_manifest, 
     persist_history
@@ -124,3 +125,31 @@ def history():
             continue
     
     return jsonify({"items": items})
+
+@analysis_bp.post("/analyze_text")
+def analyze_text():
+    """
+    LLM-only analysis path (no image upload).
+    Expects JSON: { "hint": "karaage curry", "context": { ...optional } }
+    Returns the SAME structure as the vision pipeline.
+    """
+    print(f"[DEBUG] analyze_text - Content-Type: {request.content_type}")
+    print(f"[DEBUG] analyze_text - Headers: {dict(request.headers)}")
+    print(f"[DEBUG] analyze_text - Raw data: {request.get_data()}")
+    print(f"[DEBUG] analyze_text - JSON data: {request.get_json(silent=True)}")
+    print(f"[DEBUG] analyze_text - Form data: {request.form}")
+    
+    body = request.get_json(silent=True) or {}
+    hint = body.get("hint")
+    if not hint:
+        print(f"[DEBUG] analyze_text - Missing hint, body: {body}")
+        return jsonify({"error": "missing_hint", "msg": "JSON { 'hint': '<dish or description>' } required"}), 400
+
+    try:
+        res = run_nutrition_analysis(hint, context=body.get("context"))
+        return jsonify(res), 200
+    except Exception as e:
+        import traceback
+        print("[LLM_BREAKDOWN ERROR]", e)
+        print(traceback.format_exc())
+        return jsonify({"error": "nutrition_analysis_exception", "msg": str(e)}), 500

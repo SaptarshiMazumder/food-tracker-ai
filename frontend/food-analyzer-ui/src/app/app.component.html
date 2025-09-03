@@ -23,6 +23,13 @@
       >
         📊 Log
       </button>
+      <button
+        class="nav-tab"
+        [class.active]="activeTab === 'nutrition'"
+        (click)="setActiveTab('nutrition')"
+      >
+        🥗 Nutrition
+      </button>
     </nav>
   </header>
 
@@ -40,6 +47,11 @@
     <!-- Meal Log Tab -->
     <div class="tab-content" *ngIf="activeTab === 'log'">
       <app-meal-log></app-meal-log>
+    </div>
+
+    <!-- Nutrition Analysis Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'nutrition'">
+      <app-nutrition-analysis></app-nutrition-analysis>
     </div>
   </main>
 </div>
