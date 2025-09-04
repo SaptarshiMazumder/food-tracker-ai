@@ -1,6 +1,18 @@
 <div class="app-container">
   <header class="header">
-    <h1>Food Analyzer</h1>
+    <div class="header-content">
+      <h1>Food Analyzer</h1>
+      <div class="model-info" *ngIf="appConfig && !configLoading">
+        <span class="model-label">Model:</span>
+        <span class="model-name">{{ appConfig.default_model }}</span>
+      </div>
+      <div class="model-info" *ngIf="configLoading">
+        <span class="model-label">Loading config...</span>
+      </div>
+      <div class="model-info error" *ngIf="configError">
+        <span class="model-label">Config Error</span>
+      </div>
+    </div>
     <nav class="navigation">
       <button
         class="nav-tab"

@@ -1,17 +1,18 @@
 from flask import Blueprint, jsonify, render_template_string, request
 from werkzeug.exceptions import BadRequest
 from app.graphs.health_score import run_health_score
+from app.config.settings import Config
 
 health_bp = Blueprint('health', __name__)
 
-INDEX_HTML = """<!doctype html>
+INDEX_HTML = f"""<!doctype html>
 <html>
   <head><meta charset="utf-8"><title>Food Analyzer</title></head>
   <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; max-width: 760px; margin: auto">
     <h1>Food Analyzer (LLM-only)</h1>
     <form method="POST" action="/analyze" enctype="multipart/form-data" style="border:1px solid #eee; padding:16px; border-radius:10px">
       <div><input type="file" name="image" accept="image/*" multiple required></div>
-      <div style="margin-top:8px">Model: <input name="model" value="gemini-2.5-pro" style="width:220px"></div>
+      <div style="margin-top:8px">Model: <input name="model" value="{Config.DEFAULT_MODEL}" style="width:220px"></div>
       <div style="margin-top:8px"><button type="submit">Analyze (non-streaming)</button></div>
     </form>
     <p style="margin-top:16px;color:#666">For streaming UI, the Angular app uses /upload + /analyze_sse.</p>

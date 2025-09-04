@@ -73,12 +73,15 @@ export class UploadAnalyzeComponent {
   private runSingleService(files: File[], model: string) {
     const options: AnalysisOptions = {
       use_logmeal: this.analysisMode === 'logmeal',
-      model,
+      // Only pass model if it's not empty, let backend use its default
+      model: model || undefined,
     };
 
     this.currentService = this.analysisMode as 'logmeal' | 'gemini';
 
-    this.svc.analyzeStream(files, model, options).subscribe({
+    // Only pass model if it's not empty, let backend use its default
+    const modelParam = model || undefined;
+    this.svc.analyzeStream(files, modelParam, options).subscribe({
       next: (evt) => {
         console.log('Received event from service:', evt);
         this.handleStreamEvent(evt);

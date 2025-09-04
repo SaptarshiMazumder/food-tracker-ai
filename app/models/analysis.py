@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from app.config.settings import Config
 
 @dataclass
 class AnalyzeItemGrams:
@@ -68,7 +69,7 @@ class AnalysisResponse:
 @dataclass
 class AnalysisRequest:
     """Analysis request model"""
-    model: str = "gemini-2.5-pro"
+    model: str = field(default_factory=lambda: Config.DEFAULT_MODEL)
     enable_ab_test: bool = False
     enable_fallback: bool = False
 

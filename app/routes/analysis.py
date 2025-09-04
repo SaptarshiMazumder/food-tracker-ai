@@ -127,6 +127,17 @@ def history():
     
     return jsonify({"items": items})
 
+@analysis_bp.get("/config")
+def get_config():
+    """Get application configuration including model settings"""
+    return jsonify({
+        "default_model": Config.DEFAULT_MODEL,
+        "default_openai_model": Config.DEFAULT_OPENAI_MODEL,
+        "ingredients_provider": Config.INGREDIENTS_PROVIDER,
+        "google_cloud_project": Config.GOOGLE_CLOUD_PROJECT,
+        "google_cloud_location": Config.GOOGLE_CLOUD_LOCATION
+    }), 200
+
 @analysis_bp.post("/analyze_text")
 def analyze_text():
     """
