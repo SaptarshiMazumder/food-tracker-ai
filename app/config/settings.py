@@ -27,7 +27,7 @@ class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     
     # Model settings
-    DEFAULT_MODEL = "gemini-2.5-pro"
+    DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
     DEFAULT_OPENAI_MODEL = "gpt-4o"
     
     # Provider selection

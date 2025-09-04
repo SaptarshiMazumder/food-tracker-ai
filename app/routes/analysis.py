@@ -12,6 +12,7 @@ from ..utils.helpers import (
     gather_images, save_uploads, load_job_paths, save_job_manifest, 
     persist_history
 )
+from ..config.settings import Config
 
 analysis_bp = Blueprint('analysis', __name__)
 
