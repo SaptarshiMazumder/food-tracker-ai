@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  food-analyzer:
+    build: 
+      context: .
+      dockerfile: app/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      # Gemini Model Configuration
+      GEMINI_MODEL: "gemini-2.5-pro"  # Can be overridden at runtime
+      
+      # Google API Configuration
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+      GOOGLE_CLOUD_PROJECT: "${GOOGLE_CLOUD_PROJECT:-}"
+      GOOGLE_CLOUD_LOCATION: "${GOOGLE_CLOUD_LOCATION:-global}"
+      
+      # Flask Configuration
+      FLASK_ENV: "production"
+      SECRET_KEY: "${SECRET_KEY:-your-secret-key-here}"
+      
+      # Upload Configuration
+      UPLOAD_DIR: "/app/uploads"
+      MAX_CONTENT_LENGTH: "26214400"  # 25MB
+      
+    volumes:
+      - ./app/uploads:/app/uploads
+      - ./app/logs:/app/logs
+      
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - food-analyzer
+    restart: unless-stopped
+
+# Example environment file (.env.production)
+# GEMINI_MODEL=gemini-1.5-flash
+# GOOGLE_API_KEY=your-api-key-here
+# GOOGLE_CLOUD_PROJECT=your-project-id
+# SECRET_KEY=your-secret-key-here
+
+

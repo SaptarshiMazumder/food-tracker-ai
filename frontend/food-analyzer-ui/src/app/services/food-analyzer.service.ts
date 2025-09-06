@@ -22,10 +22,13 @@ export class FoodAnalyzerService {
   constructor(private http: HttpClient) {}
 
   // Legacy non-streaming (kept for fallback)
-  analyze(files: File[], model = 'gemini-2.5-pro'): Observable<ApiResponse> {
+  analyze(files: File[], model?: string): Observable<ApiResponse> {
     const fd = new FormData();
     files.forEach((f) => fd.append('image', f));
-    fd.append('model', model);
+    // Only append model if explicitly provided, let backend use its default
+    if (model) {
+      fd.append('model', model);
+    }
     return this.http
       .post<ApiResponse>(`${environment.apiBase}/analyze`, fd)
       .pipe(
@@ -40,12 +43,15 @@ export class FoodAnalyzerService {
   // NEW: streaming flow with SSE and options
   analyzeStream(
     files: File[],
-    model = 'gemini-2.5-pro',
+    model?: string,
     options: AnalysisOptions = {}
   ): Observable<StreamEvent> {
     const fd = new FormData();
     files.forEach((f) => fd.append('image', f));
-    fd.append('model', model);
+    // Only append model if explicitly provided, let backend use its default
+    if (model) {
+      fd.append('model', model);
+    }
 
     // Add LogMeal option if specified
     if (options.use_logmeal !== undefined) {
@@ -60,9 +66,12 @@ export class FoodAnalyzerService {
           next: ({ job_id }) => {
             let url = `${
               environment.apiBase
-            }/analyze_sse?job_id=${encodeURIComponent(
-              job_id
-            )}&model=${encodeURIComponent(model)}`;
+            }/analyze_sse?job_id=${encodeURIComponent(job_id)}`;
+
+            // Only add model parameter if explicitly provided
+            if (model) {
+              url += `&model=${encodeURIComponent(model)}`;
+            }
 
             // Add LogMeal parameter to SSE URL
             if (options.use_logmeal !== undefined) {
@@ -127,7 +136,7 @@ export class FoodAnalyzerService {
   // NEW: Streaming with fallback (try LogMeal first, fallback to Gemini)
   analyzeStreamWithFallback(
     files: File[],
-    model = 'gemini-2.5-pro'
+    model?: string
   ): Observable<StreamEvent> {
     return new Observable<StreamEvent>((observer) => {
       // First try LogMeal

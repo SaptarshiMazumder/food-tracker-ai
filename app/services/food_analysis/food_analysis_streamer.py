@@ -2,9 +2,9 @@ import time
 from typing import List, Dict, Any, Generator
 
 from ...utils.helpers import fnum, sse_pack, call_with_heartbeat
-from ...services.gemini.gemini_recognize import gemini_recognize_dish
+from ...graphs.food_analysis.services.gemini.gemini_recognize import gemini_recognize_dish
 from .food_analysis_ingredient_quantifier_factory import FoodAnalysisIngredientQuantifierFactory
-from ...services.gemini.gemini_calories import calories_from_ingredients
+from ...graphs.food_analysis.services.gemini.gemini_calories import calories_from_ingredients
 from .food_analysis_config import FoodAnalysisConfig
 from .food_analysis_formatter import FoodAnalysisFormatter
 

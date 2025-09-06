@@ -11,6 +11,9 @@ from .food_analysis import run_food_analysis, build_food_analysis_graph, FoodAna
 # Import the health score graph
 from .health_score import run_health_score, build_health_score_graph, HealthScoreState
 
+# Import the nutrition analysis graph
+from .nutrition_analysis import run_nutrition_analysis, build_nutrition_analysis_graph, NutritionAnalysisState
+
 __all__ = [
     # Food Analysis Graph
     "run_food_analysis",
@@ -20,5 +23,10 @@ __all__ = [
     # Health Score Graph
     "run_health_score",
     "build_health_score_graph",
-    "HealthScoreState"
+    "HealthScoreState",
+    
+    # Nutrition Analysis Graph
+    "run_nutrition_analysis",
+    "build_nutrition_analysis_graph",
+    "NutritionAnalysisState"
 ]

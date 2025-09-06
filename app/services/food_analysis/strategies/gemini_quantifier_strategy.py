@@ -22,7 +22,7 @@ class GeminiQuantifierStrategy(IngredientQuantifierStrategy):
         """
         Quantify ingredients using Gemini model.
         """
-        from ...gemini.gemini_ingredients import ingredients_from_image
+        from ....graphs.food_analysis.services.gemini.gemini_ingredients import ingredients_from_image
         
         return ingredients_from_image(
             project=project,

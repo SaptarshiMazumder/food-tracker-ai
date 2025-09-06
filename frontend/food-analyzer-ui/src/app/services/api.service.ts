@@ -52,6 +52,8 @@ export interface AnalyzeResponse {
   overlay_url?: string | null;
   image_url?: string;
   total_ms?: number;
+  timings?: any;
+  health_score?: any;
 }
 
 // NEW: A/B test result interface
@@ -77,6 +79,14 @@ export interface AnalysisOptions {
   model?: string;
 }
 
+export interface AppConfig {
+  default_model: string;
+  default_openai_model: string;
+  ingredients_provider: string;
+  google_cloud_project: string;
+  google_cloud_location: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private base = environment.apiBase;
@@ -89,7 +99,10 @@ export class ApiService {
   ): Observable<AnalyzeResponse> {
     const form = new FormData();
     form.append('image', file, file.name);
-    form.append('model', options.model || 'gemini-2.5-pro');
+    // Let the backend use its default model if none specified
+    if (options.model) {
+      form.append('model', options.model);
+    }
 
     if (options.use_logmeal !== undefined) {
       form.append('use_logmeal', options.use_logmeal.toString());
@@ -112,10 +125,7 @@ export class ApiService {
   }
 
   // NEW: A/B test both services
-  analyzeABTest(
-    file: File,
-    model = 'gemini-2.5-pro'
-  ): Observable<ABTestResult> {
+  analyzeABTest(file: File, model?: string): Observable<ABTestResult> {
     const logmealRequest = this.analyze(file, { use_logmeal: true, model });
     const geminiRequest = this.analyze(file, { use_logmeal: false, model });
 
@@ -168,10 +178,7 @@ export class ApiService {
   }
 
   // NEW: Analyze with fallback (try LogMeal first, fallback to Gemini)
-  analyzeWithFallback(
-    file: File,
-    model = 'gemini-2.5-pro'
-  ): Observable<AnalyzeResponse> {
+  analyzeWithFallback(file: File, model?: string): Observable<AnalyzeResponse> {
     return this.analyze(file, { use_logmeal: true, model }).pipe(
       catchError((logmealError) => {
         console.log('LogMeal failed, falling back to Gemini:', logmealError);
@@ -235,5 +242,39 @@ export class ApiService {
           );
         })
       );
+  }
+
+  // NEW: Nutrition Analysis method
+  analyzeNutrition(hint: string, context?: any): Observable<AnalyzeResponse> {
+    const body = { hint, context };
+    console.log('[DEBUG] analyzeNutrition - Sending request:', {
+      url: `${this.base}/analyze_text`,
+      body: body,
+      hint: hint,
+      hintType: typeof hint,
+      hintLength: hint ? hint.length : 'undefined',
+      bodyStringified: JSON.stringify(body),
+    });
+
+    return this.http
+      .post<AnalyzeResponse>(`${this.base}/analyze_text`, body)
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          console.error('[DEBUG] analyzeNutrition - Error:', err);
+          console.error('[DEBUG] analyzeNutrition - Error body:', err.error);
+          return throwError(
+            () => err.error || { error: 'nutrition_analysis_failed' }
+          );
+        })
+      );
+  }
+
+  // NEW: Get application configuration
+  getConfig(): Observable<AppConfig> {
+    return this.http.get<AppConfig>(`${this.base}/config`).pipe(
+      catchError((err: HttpErrorResponse) => {
+        return throwError(() => err.error || { error: 'config_fetch_failed' });
+      })
+    );
   }
 }

@@ -1,7 +1,7 @@
 import time
 from typing import List, Optional
 
-from ....services.gemini.gemini_recognize import gemini_recognize_dish
+from ..services.gemini.gemini_recognize import gemini_recognize_dish
 from ..state.food_analysis_state import FoodAnalysisState
 from ..utils.timing import calculate_ms, print_node_summary
 

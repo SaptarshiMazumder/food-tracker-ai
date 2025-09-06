@@ -12,7 +12,10 @@ Leverage multiple angles to reconcile volumes and surfaces; down-weight outliers
 """
 
 INGREDIENTS_PROMPT = """
-You estimate ingredient portions (grams) for a SINGLE-PLATE serving from one or more photos (multiple angles).
+You estimate ingredient portions (grams) for a SINGLE-PLATE serving from one or more photos of the SAME dish, taken from multiple angles.
+
+Input: Up to N photos of the same plate (multiple angles).
+Goal: Use all angles to improve portion-size accuracy.
 
 Output: STRICT JSON ONLY
 {
@@ -30,6 +33,24 @@ Rules:
 - Keep names short and conventional ("cooked rice", "chicken", "cooking oil").
 - Exclude inedible items (plate, utensils, wrappers).
 - Compute total_grams as the sum of item grams.
+- Use ALL angles. Reconcile discrepancies to produce ONE consolidated estimate for a single serving.
+
+Multi-angle reasoning (REQUIRED):
+1) Identify the primary plate/bowl across images. Ignore extra plates, duplicates, backgrounds.
+2) Use cross-angle cues for scale: utensil size, hand size, plate diameter, container depth, cut thickness, piece counts.
+3) Resolve occlusions: if an item is hidden in one angle but visible in another, include it once (no double counting).
+4) Reconcile conflicts:
+   - If two angles suggest different volumes, prefer the angle with better scale references (utensils/edge-to-edge view).
+   - If still uncertain, choose the LOWER plausible estimate consistent with all angles and note the uncertainty.
+5) Count pieces consistently across angles (e.g., 6 nuggets seen in one angle + breading clues in others).
+6) Merge duplicates (e.g., "rice" seen in top view + side view is the same portion).
+7) If any angle strongly indicates a preparation method (e.g., deep-fried crust, glossy oil sheen), apply that method globally.
+
+Utensil scaling:
+- If a spoon or fork is present in any photo, use it as a reference to judge portion size.
+- Assume a standard dinner spoon/fork length of 19 cm (190 mm).
+- If chopsticks are present, assume 24 cm length.
+- Prefer utensil scaling over guesswork when plate depth/size is unclear.
 
 **VERY IMPORTANT –** Subtle accuracy guidance for typical single-plate portions:
 - Breads/flatbreads/buns/tortillas/wraps: prefer conservative weights for single pieces; avoid inflating a single slice/piece.
@@ -51,8 +72,23 @@ Before answering, sanity-check your oil estimate:
 - If not deep-fried and oil > 25 g, reduce to a plausible value in the ranges above.
 - If uncertain, choose the LOW end of the relevant range.
 
+Edge cases:
+- Mixed bowls (e.g., curry over rice): split into separate items (e.g., "cooked rice", "curry sauce", "chicken").
+- Composite items (e.g., sandwiches, burgers): list main components (bun/bread, patty/meat, cheese, sauces, veggies).
+- Sauces: include if visible or clearly implied (e.g., mayonnaise, ketchup, curry sauce). If quantity is small but present, 5–20 g typical.
+- Bones/inedible shells: exclude their weight.
+- Multiple plates in frame: choose the single most centered/consistently shown plate; note if others were ignored.
+
+Confidence:
+- 0–1, reflecting overall certainty after reconciling all angles (consider scale cues, occlusions, visibility, method).
+
+"notes" field:
+- Briefly explain the multi-angle cues that affected the estimate (e.g., "used spoon length for scale; 6 nuggets confirmed from side angle; curry gloss suggests ~18 g oil").
+- If anything was excluded (extra plate, decoration), say so.
+
 Return ONLY the JSON.
 """
+
 
 def build_ingredients_prompt(dish_hint: str = "", ing_hint: list = None) -> str:
     """

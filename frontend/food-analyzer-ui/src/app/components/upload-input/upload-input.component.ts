@@ -41,9 +41,9 @@ export class UploadInputComponent {
 
   submit() {
     const files = this.form.value.files as File[] | null;
-    const model = 'gemini-2.5-pro'; // Always use default model
     if (!files?.length) return;
-    this.analyze.emit({ files, model });
+    // Don't specify model, let backend use its default configuration
+    this.analyze.emit({ files, model: '' });
   }
 
   reset() {

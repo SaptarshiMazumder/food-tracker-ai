@@ -1,12 +1,13 @@
 # app/services/gemini/gemini_healthscore.py
 import json
 from typing import Dict, Any
-from app.services.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
+from app.services.shared.gemini.gemini_client import make_client, extract_text_from_response, first_json_block
 from app.models.health_score import HealthScoreInput, HealthScoreOutput
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 from app.prompts.health_score_prompt import HEALTH_SCORE_PROMPT
+from app.config.settings import Config
 from google.genai import types
 
 def _load_prompt() -> str:
@@ -28,7 +29,7 @@ def score_with_gemini(payload: Dict[str, Any]) -> Dict[str, Any]:
         thinking_config=types.ThinkingConfig(thinking_budget=128),
     )
     resp1 = client.models.generate_content(
-        model="gemini-2.5-pro",
+        model=Config.DEFAULT_MODEL,
         contents=[types.Content(role="user", parts=[types.Part.from_text(text=f"{prompt}\n\nINPUT:\n{user_json}")])],
         config=cfg1,
     )
@@ -69,7 +70,7 @@ def score_with_gemini(payload: Dict[str, Any]) -> Dict[str, Any]:
             thinking_config=types.ThinkingConfig(thinking_budget=128),
         )
         resp2 = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model=Config.DEFAULT_MODEL,
             contents=[types.Content(role="user", parts=[types.Part.from_text(text=f"{prompt}\n\nINPUT:\n{user_json}")])],
             config=cfg2,
         )

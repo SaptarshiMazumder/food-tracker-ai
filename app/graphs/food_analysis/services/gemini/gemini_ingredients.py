@@ -2,7 +2,7 @@
 import re
 from typing import Dict, List, Optional
 from google.genai import types
-from .gemini_client import make_client, prepare_image_parts, extract_text_from_response, first_json_block
+from app.services.shared.gemini.gemini_client import make_client, prepare_image_parts, extract_text_from_response, first_json_block
 
 def fnum(x, default=0.0) -> float:
     """
