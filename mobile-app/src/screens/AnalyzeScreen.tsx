@@ -91,6 +91,7 @@ export default function AnalyzeScreen() {
   const [healthScoreLoading, setHealthScoreLoading] = useState(false);
   const [loggedMealId, setLoggedMealId] = useState<string | null>(null);
   const [showSavedNotification, setShowSavedNotification] = useState(false);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
@@ -506,10 +507,16 @@ export default function AnalyzeScreen() {
             {gotCalories && Array.isArray(result?.items_nutrition) && result!.items_nutrition!.length > 0 ? (
               <>
                 {(() => {
-                  const totalG = typeof result?.total_grams === 'number' && result!.total_grams > 0 ? result!.total_grams : 0;
-                  const p = totalG > 0 && typeof result?.total_protein_g === 'number' ? result!.total_protein_g / totalG : 0;
-                  const c = totalG > 0 && typeof result?.total_carbs_g === 'number' ? result!.total_carbs_g / totalG : 0;
-                  const f = totalG > 0 && typeof result?.total_fat_g === 'number' ? result!.total_fat_g / totalG : 0;
+                  const useAdjusted = !!totals;
+                  const macroG = useAdjusted ? (totals!.grams || 0) : (typeof result?.total_grams === 'number' ? (result!.total_grams || 0) : 0);
+                  const macroProtein = useAdjusted ? (totals!.protein || 0) : (typeof result?.total_protein_g === 'number' ? (result!.total_protein_g || 0) : 0);
+                  const macroCarbs = useAdjusted ? (totals!.carbs || 0) : (typeof result?.total_carbs_g === 'number' ? (result!.total_carbs_g || 0) : 0);
+                  const macroFat = useAdjusted ? (totals!.fat || 0) : (typeof result?.total_fat_g === 'number' ? (result!.total_fat_g || 0) : 0);
+                  const macroKcal = useAdjusted ? (totals!.kcal || 0) : (typeof result?.total_kcal === 'number' ? (result!.total_kcal || 0) : 0);
+                  const totalG = macroG > 0 ? macroG : 0;
+                  const p = totalG > 0 ? macroProtein / totalG : 0;
+                  const c = totalG > 0 ? macroCarbs / totalG : 0;
+                  const f = totalG > 0 ? macroFat / totalG : 0;
                   return (
                     <View style={styles.grid4}>
                       <View style={styles.tile}>
@@ -520,7 +527,7 @@ export default function AnalyzeScreen() {
                             <MaterialCommunityIcons name="fire" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
                           </View>
                         </View>
-                        <Text style={styles.tileValue}>{result!.total_kcal}</Text>
+                        <Text style={styles.tileValue}>{macroKcal}</Text>
                       </View>
                       <View style={styles.tile}>
                         <View style={styles.ringRightOverlay} pointerEvents="none">
@@ -533,7 +540,7 @@ export default function AnalyzeScreen() {
                               <MaterialCommunityIcons name="dumbbell" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
                             </View>
                           </View>
-                          <Text style={styles.tileValue}>{result!.total_protein_g} g</Text>
+                          <Text style={styles.tileValue}>{macroProtein} g</Text>
                         </View>
                       </View>
                       <View style={styles.tile}>
@@ -547,7 +554,7 @@ export default function AnalyzeScreen() {
                               <MaterialCommunityIcons name="bread-slice-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
                             </View>
                           </View>
-                          <Text style={styles.tileValue}>{result!.total_carbs_g} g</Text>
+                          <Text style={styles.tileValue}>{macroCarbs} g</Text>
                         </View>
                       </View>
                       <View style={styles.tile}>
@@ -561,7 +568,7 @@ export default function AnalyzeScreen() {
                               <MaterialCommunityIcons name="water-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
                             </View>
                           </View>
-                          <Text style={styles.tileValue}>{result!.total_fat_g} g</Text>
+                          <Text style={styles.tileValue}>{macroFat} g</Text>
                         </View>
                       </View>
                     </View>
@@ -590,23 +597,183 @@ export default function AnalyzeScreen() {
             )}
           </Card>
 
-          {/* 3. INGREDIENTS */}
+          {/* 3. INGREDIENTS (combined with adjust portions) */}
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.sectionTitle}>3. INGREDIENTS PORTIONS</Text>
+                <Text style={styles.sectionTitle}>3. INGREDIENTS</Text>
                 <Ionicons name="scale-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
               </View>
             </View>
             {gotIngr ? (
               Array.isArray(result?.items_grams) && result!.items_grams!.length > 0 ? (
                 <>
-                  {result!.items_grams!.map((it: { name: string; grams: number; note?: string }, i: number) => (
-                    <View key={i} style={styles.rowBetween}>
-                      <Text>{it.name}</Text>
-                      <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>{it.grams} g</Text></View>
+                  {uiItems.length > 0 ? (
+                    uiItems.map((u, i) => (
+                      <View key={i} style={{ marginBottom: 12 }}>
+                        <View style={styles.rowBetween}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={styles.ingName}>{u.name}</Text>
+                            <TouchableOpacity
+                              onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
+                              activeOpacity={0.7}
+                            >
+                              <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color={Colors.neutralText} style={{ transform: [{ translateY: 1 }] }} />
+                            </TouchableOpacity>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <TextInput
+                              style={styles.gramsInput}
+                              keyboardType="numeric"
+                              value={String(grams[i] ?? u.baseGrams)}
+                              onChangeText={(txt) => {
+                                const n = parseInt(txt || '0', 10);
+                                const clamped = isNaN(n) ? 0 : Math.max(u.min, Math.min(u.max, n));
+                                const next = [...grams];
+                                next[i] = clamped;
+                                setGrams(next);
+                                setTotals(computeTotals(uiItems, next));
+                              }}
+                            />
+                            <Text>g</Text>
+                          </View>
+                        </View>
+                        {/* Always-visible description (note) */}
+                        {u.note ? (
+                          <Text style={styles.noteText}>{u.note}</Text>
+                        ) : null}
+
+                        {/* Always visible per-ingredient macros */}
+                        <View style={styles.macroRow}>
+                          <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)}</Text></View>
+                          <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
+                          <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
+                          <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
+                        </View>
+                        {expanded[i] ? (
+                          <>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Slider
+                                minimumValue={u.min}
+                                maximumValue={u.max}
+                                step={u.step}
+                                value={grams[i] ?? u.baseGrams}
+                                style={{ height: 36, flex: 1 }}
+                                minimumTrackTintColor={Colors.sliderActive}
+                                maximumTrackTintColor={Colors.sliderInactive}
+                                thumbTintColor={Colors.sliderActive}
+                                onValueChange={(val) => {
+                                  const next = [...grams];
+                                  next[i] = Math.round(val as number);
+                                  setGrams(next);
+                                  setTotals(computeTotals(uiItems, next));
+                                }}
+                              />
+                              <TouchableOpacity
+                                activeOpacity={0.7}
+                                style={styles.resetBtn}
+                                onPress={() => {
+                                  const next = [...grams];
+                                  next[i] = u.baseGrams;
+                                  setGrams(next);
+                                  setTotals(computeTotals(uiItems, next));
+                                }}
+                              >
+                                <Text style={styles.resetBtnText}>Reset</Text>
+                              </TouchableOpacity>
+                            </View>
+                            <Text style={[styles.perGText, { marginTop: 4 }]}>{u.kcalPerG.toFixed(2)} kcal/g</Text>
+                          </>
+                        ) : null}
+                      </View>
+                    ))
+                  ) : (
+                    // Before calories event: basic editable rows with default slider bounds
+                    <>
+                      {result!.items_grams!.map((it: { name: string; grams: number; note?: string }, i: number) => {
+                        const base = typeof it.grams === 'number' ? it.grams : 0;
+                        const min = Math.max(0, Math.floor(base * 0.2));
+                        const max = Math.max(20, Math.ceil(base * 2.2));
+                        return (
+                          <View key={i} style={{ marginBottom: 12 }}>
+                            <View style={styles.rowBetween}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text>{it.name}</Text>
+                                <TouchableOpacity
+                                  onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color={Colors.neutralText} style={{ transform: [{ translateY: 1 }] }} />
+                                </TouchableOpacity>
+                              </View>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <TextInput
+                                  style={styles.gramsInput}
+                                  keyboardType="numeric"
+                                  value={String(grams[i] ?? base)}
+                                  onChangeText={(txt) => {
+                                    const n = parseInt(txt || '0', 10);
+                                    const clamped = isNaN(n) ? 0 : Math.max(min, Math.min(max, n));
+                                    const next = [...grams];
+                                    next[i] = clamped;
+                                    setGrams(next);
+                                  }}
+                                />
+                                <Text>g</Text>
+                              </View>
+                            </View>
+                            {/* Always-visible description (note) prior to calories */}
+                            {it.note ? (
+                              <Text style={styles.noteText}>{it.note}</Text>
+                            ) : null}
+                            {expanded[i] ? (
+                              <>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                  <Slider
+                                    minimumValue={min}
+                                    maximumValue={max}
+                                    step={1}
+                                    value={grams[i] ?? base}
+                                    style={{ height: 36, flex: 1 }}
+                                    minimumTrackTintColor={Colors.sliderActive}
+                                    maximumTrackTintColor={Colors.sliderInactive}
+                                    thumbTintColor={Colors.sliderActive}
+                                    onValueChange={(val) => {
+                                      const next = [...grams];
+                                      next[i] = Math.round(val as number);
+                                      setGrams(next);
+                                    }}
+                                  />
+                                  <TouchableOpacity
+                                    activeOpacity={0.7}
+                                    style={styles.resetBtn}
+                                    onPress={() => {
+                                      const next = [...grams];
+                                      next[i] = base;
+                                      setGrams(next);
+                                    }}
+                                  >
+                                    <Text style={styles.resetBtnText}>Reset</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </>
+                            ) : null}
+                          </View>
+                        );
+                      })}
+                    </>
+                  )}
+                  {totals ? (
+                    <View style={styles.totalsContainer}>
+                      <Text style={styles.totalsTitle}>Adjusted totals</Text>
+                      <View style={styles.macroRow}>
+                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{totals.kcal}</Text></View>
+                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{totals.protein} g</Text></View>
+                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{totals.carbs} g</Text></View>
+                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{totals.fat} g</Text></View>
+                      </View>
                     </View>
-                  ))}
+                  ) : null}
                 </>
               ) : null
             ) : (
@@ -629,90 +796,6 @@ export default function AnalyzeScreen() {
               </>
             )}
           </Card>
-
-          {/* Adjust portions */}
-          {uiItems.length > 0 ? (
-            <Card>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.sectionTitle}>ADJUST PORTIONS</Text>
-                <Ionicons name="create-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
-              </View>
-              {uiItems.map((u, i) => (
-                <View key={i} style={{ marginBottom: 12 }}>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.ingName}>{u.name}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <TextInput
-                        style={styles.gramsInput}
-                        keyboardType="numeric"
-                        value={String(grams[i] ?? u.baseGrams)}
-                        onChangeText={(txt) => {
-                          const n = parseInt(txt || '0', 10);
-                          const clamped = isNaN(n) ? 0 : Math.max(u.min, Math.min(u.max, n));
-                          const next = [...grams];
-                          next[i] = clamped;
-                          setGrams(next);
-                          setTotals(computeTotals(uiItems, next));
-                        }}
-                      />
-                      <Text>g</Text>
-                      <TouchableOpacity
-                        activeOpacity={0.7}
-                        style={styles.resetBtn}
-                        onPress={() => {
-                          const next = [...grams];
-                          next[i] = u.baseGrams;
-                          setGrams(next);
-                          setTotals(computeTotals(uiItems, next));
-                        }}
-                      >
-                        <Text style={styles.resetBtnText}>Reset</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  {u.note ? (
-                    <Text style={styles.noteText}>{u.note}</Text>
-                  ) : null}
-                  <Slider
-                    minimumValue={u.min}
-                    maximumValue={u.max}
-                    step={u.step}
-                    value={grams[i] ?? u.baseGrams}
-                    style={{ height: 36 }}
-                    minimumTrackTintColor={Colors.sliderActive}
-                    maximumTrackTintColor={Colors.sliderInactive}
-                    thumbTintColor={Colors.sliderActive}
-                    onValueChange={(val) => {
-                      const next = [...grams];
-                      next[i] = Math.round(val as number);
-                      setGrams(next);
-                      setTotals(computeTotals(uiItems, next));
-                    }}
-                  />
-                  <View style={styles.macroRow}>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)}</Text></View>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{(u.proteinPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{(u.carbsPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{(u.fatPerG * (grams[i] ?? u.baseGrams)).toFixed(1)} g</Text></View>
-                  </View>
-                  <Text style={styles.perGText}>(
-                    {u.kcalPerG.toFixed(2)} kcal/g
-                  )</Text>
-                </View>
-              ))}
-              {totals ? (
-                <View style={styles.totalsContainer}>
-                  <Text style={styles.totalsTitle}>Adjusted totals</Text>
-                  <View style={styles.macroRow}>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{totals.kcal}</Text></View>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{totals.protein} g</Text></View>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{totals.carbs} g</Text></View>
-                    <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{totals.fat} g</Text></View>
-                  </View>
-                </View>
-              ) : null}
-            </Card>
-          ) : null}
 
           
 
