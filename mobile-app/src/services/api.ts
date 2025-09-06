@@ -1,10 +1,12 @@
 import RNEventSource from 'react-native-event-source';
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
+const HARDCODED_API_BASE_URL = 'https://gtljww3chp3nvudq2xq7uixuye0zfzbo.lambda-url.ap-northeast-1.on.aws';
+
 const getBaseUrl = () => {
   // Read from process.env style at runtime with Expo (via app config or env plugin)
   const url = process.env.EXPO_PUBLIC_API_BASE_URL;
-  return url || 'http://10.0.2.2:5000'; // Android emulator default to host machine
+  return url || HARDCODED_API_BASE_URL;
 };
 
 export async function apiRequest<T>(path: string, options?: { method?: HttpMethod; body?: any; headers?: Record<string, string> }) {

@@ -2,7 +2,7 @@
 
 Cross-platform UI for Food Tracker, built with Expo (React Native). This does not modify existing backend or Angular frontend.
 
-### Prerequisites
+### Prerequisites[.expo](.expo)
 
 - Node.js 18+
 - Android Studio with Android SDK and an AVD emulator (Pixel recommended)

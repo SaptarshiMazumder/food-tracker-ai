@@ -8,16 +8,16 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
-# Install dependencies (context expected to be ./app for this stage)
-COPY requirements.txt .
+# Install dependencies (use repo root context; copy from ./app)
+COPY app/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy environment files first (if they exist)
 # This ensures environment variables are available in the container
-COPY .env* ./
+COPY app/.env* ./
 
-# Copy project files
-COPY . .
+# Copy project files (from repo root's app folder)
+COPY app/ .
 
 # Set default Google Cloud authentication environment variables
 # Note: We use GOOGLE_API_KEY for authentication instead of Application Default Credentials

@@ -5,6 +5,11 @@ set -euo pipefail
 # Simple deploy script to build the Lambda image (multi-stage target in app/Dockerfile),
 # push to ECR, create/update the Lambda function, set env vars, and output Function URL.
 
+# Ensure we run from the repository root so relative paths (e.g., app/Dockerfile) resolve
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="${SCRIPT_DIR%/scripts}"
+cd "${REPO_ROOT}"
+
 # -------- Config (overridable via env or flags) --------
 REGION="${REGION:-ap-northeast-1}"
 ECR_REPO="${ECR_REPO:-food-analyzer-backend-lambda}"

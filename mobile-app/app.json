@@ -28,15 +28,19 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.anonymous.mobileapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "e098bf11-bf79-4ef0-b6cd-af9ef86a3a7f"
       }
     }
   }

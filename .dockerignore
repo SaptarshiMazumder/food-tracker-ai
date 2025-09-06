@@ -1,0 +1,49 @@
+# Global ignores to keep Docker build context small and fast
+
+# VCS
+.git
+.gitignore
+
+# Editors/OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Python caches
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+
+# Virtual envs
+venv/
+.venv/
+app/venv/
+app/.venv/
+
+# Large local data not needed in images
+uploads/
+app/uploads/
+images/
+
+# Frontend and mobile build artifacts
+frontend/**/node_modules/
+frontend/**/dist/
+frontend/**/.next/
+frontend/**/build/
+mobile-app/node_modules/
+mobile-app/.expo/
+mobile-app/dist/
+
+# Large model weights not needed in Lambda image
+yolov8*.pt
+
+# Old/unused code
+old/
+
+# Local env files (secrets should not be baked into images)
+.env
+**/.env
+mmfood-rag/.env
+
+

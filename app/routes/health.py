@@ -6,9 +6,9 @@ health_bp = Blueprint('health', __name__)
 
 INDEX_HTML = """<!doctype html>
 <html>
-  <head><meta charset="utf-8"><title>Food Analyzer</title></head>
+  <head><meta charset="utf-8"><title>Food Analysis Backend API</title></head>
   <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; max-width: 760px; margin: auto">
-    <h1>Food Analyzer (LLM-only)</h1>
+    <h1>Food Analysis Backend API</h1>
     <form method="POST" action="/analyze" enctype="multipart/form-data" style="border:1px solid #eee; padding:16px; border-radius:10px">
       <div><input type="file" name="image" accept="image/*" multiple required></div>
       <div style="margin-top:8px">Model: <input name="model" value="gemini-2.5-pro" style="width:220px"></div>
