@@ -20,3 +20,4 @@ numpy==1.26.4
 # ---- Utilities / typing ----
 pydantic>=2.7
 requests>=2.32
+boto3>=1.34

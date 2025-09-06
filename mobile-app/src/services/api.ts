@@ -161,6 +161,33 @@ export async function analyzeStream(
     });
     es.addEventListener('error', (e: any) => push({ phase: 'error', data: e }));
 
+    // Polling fallback for Lambda (SSE may be buffered by gateways)
+    let lastFlags: any = {};
+    const processFlags = (flags: any, payload: any) => {
+      if (flags?.recognize && !lastFlags.recognize) push({ phase: 'recognize', data: payload });
+      if (flags?.ing_quant && !lastFlags.ing_quant) push({ phase: 'ing_quant', data: payload });
+      if (flags?.calories && !lastFlags.calories) push({ phase: 'calories', data: payload });
+      if (flags?.done && !lastFlags.done) {
+        push({ phase: 'done', data: payload as any });
+        done = true;
+      }
+      lastFlags = flags || lastFlags;
+    };
+
+    const poll = async () => {
+      try {
+        const s = await fetch(`${base}/status?${new URLSearchParams({ job_id }).toString()}`);
+        if (!s.ok) return;
+        const js = await s.json();
+        const flags = js?.flags || {};
+        const payload = js || {};
+        processFlags(flags, payload);
+      } catch {}
+    };
+    // Immediate poll to catch early phases, then frequent polling
+    await poll();
+    const poller = setInterval(poll, 600);
+
     while (!done || queue.length) {
       if (queue.length) {
         yield queue.shift() as StreamEvent;
@@ -168,6 +195,7 @@ export async function analyzeStream(
         await new Promise((r) => setTimeout(r, 50));
       }
     }
+    try { clearInterval(poller); } catch {}
   }
 
   return iterator();

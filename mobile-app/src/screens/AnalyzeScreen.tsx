@@ -229,28 +229,32 @@ export default function AnalyzeScreen() {
         if (ev.phase === 'recognize') {
           Object.assign(acc, ev.data);
           setGotRecognize(true);
+          // Update result so FOOD section renders immediately
           setResult((prev) => ({ ...(prev || {}), ...acc }));
         } else if (ev.phase === 'ing_quant') {
           Object.assign(acc, ev.data);
           setGotIngr(true);
+          // Update result so INGREDIENTS section renders immediately
           setResult((prev) => ({ ...(prev || {}), ...acc }));
         } else if (ev.phase === 'calories') {
           Object.assign(acc, ev.data);
           setGotCalories(true);
-          setResult((prev) => ({ ...(prev || {}), ...acc }));
-          // Build UI items as soon as calories arrive (if grams available)
-          const snapshot = { ...(result || {}), ...acc } as AnalysisResponse;
-          if (Array.isArray(snapshot.items_grams) && Array.isArray(snapshot.items_nutrition)) {
-            const ui = buildUiItems(snapshot);
-            setUiItems(ui);
-            const baseGrams = ui.map((u) => u.baseGrams);
-            setGrams(baseGrams);
-            setTotals(computeTotals(ui, baseGrams));
-          }
+          setResult((prev) => {
+            const next = { ...(prev || {}), ...acc } as AnalysisResponse;
+            // Build UI items as soon as calories arrive (if grams + nutrition available)
+            if (Array.isArray(next.items_grams) && Array.isArray(next.items_nutrition)) {
+              const ui = buildUiItems(next);
+              setUiItems(ui);
+              const baseGrams = ui.map((u) => u.baseGrams);
+              setGrams(baseGrams);
+              setTotals(computeTotals(ui, baseGrams));
+            }
+            return next;
+          });
         } else if (ev.phase === 'done') {
           Object.assign(acc, ev.data);
           // Compose final result snapshot
-          const finalRes = { ...(result || {}), ...acc } as AnalysisResponse;
+          const finalRes = { ...(acc) } as AnalysisResponse;
           // Ensure UI items/totals are computed if not already
           if (uiItems.length === 0 && Array.isArray(finalRes.items_grams) && Array.isArray(finalRes.items_nutrition)) {
             const ui = buildUiItems(finalRes);

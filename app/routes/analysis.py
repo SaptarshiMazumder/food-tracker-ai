@@ -1,5 +1,6 @@
 import uuid
 import os
+import json
 from flask import Blueprint, request, jsonify, Response, current_app
 from werkzeug.utils import secure_filename
 
@@ -13,6 +14,7 @@ from ..utils.helpers import (
     persist_history
 )
 from ..config.settings import Config
+from ..services.shared.dynamodb_store import PartialStore
 
 analysis_bp = Blueprint('analysis', __name__)
 
@@ -79,13 +81,48 @@ def analyze_sse():
 
     config = FoodAnalysisConfig()
     streamer = FoodAnalysisStreamer(config)
-    
+    store = PartialStore()
+
+    def _update_partial(phase: str, data: dict):
+        # Write to DynamoDB (best-effort)
+        try:
+            store.put_phase(job_id, phase, data or {})
+        except Exception:
+            pass
+        # Also write local file for dev
+        try:
+            upload_dir = current_app.config['UPLOAD_DIR']
+            p = os.path.join(upload_dir, f"{job_id}.partial.json")
+            state = {}
+            if os.path.exists(p):
+                with open(p, "r", encoding="utf-8") as f:
+                    state = json.load(f)
+            state.update(data or {})
+            flags = state.get("flags") or {}
+            flags[phase] = True
+            state["flags"] = flags
+            state["last_phase"] = phase
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(state, f, ensure_ascii=False)
+        except Exception:
+            pass
+
     def event_stream():
         for event in streamer.stream_analysis(image_paths, model):
+            # Parse SSE frame and persist partials
+            try:
+                ev_name = None
+                ev_data = None
+                for line in event.splitlines():
+                    if line.startswith('event: '):
+                        ev_name = line[len('event: '):].strip()
+                    elif line.startswith('data: '):
+                        ev_data = json.loads(line[len('data: '):])
+                if ev_name in ("recognize", "ing_quant", "calories", "done") and isinstance(ev_data, dict):
+                    _update_partial(ev_name, ev_data)
+            except Exception:
+                pass
             yield event
-        # Persist the final result
-        # Note: This would need to be handled differently in the streaming context
-        # For now, we'll let the frontend handle persistence
 
     headers = {
         "Content-Type": "text/event-stream",
@@ -95,6 +132,30 @@ def analyze_sse():
         "Access-Control-Allow-Origin": "*",
     }
     return Response(event_stream(), headers=headers)
+
+@analysis_bp.get("/status")
+def analyze_status():
+    """Poll the current aggregated status for a given job_id (for clients where SSE is buffered)."""
+    job_id = request.args.get("job_id", "")
+    if not job_id:
+        return jsonify({"error": "missing_job_id"}), 400
+    # Prefer DynamoDB; fallback to local file
+    try:
+        data = PartialStore().get_status(job_id)
+        if data:
+            return jsonify(data), 200
+    except Exception:
+        data = None
+    upload_dir = current_app.config['UPLOAD_DIR']
+    p = os.path.join(upload_dir, f"{job_id}.partial.json")
+    if os.path.exists(p):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return jsonify(data), 200
+        except Exception as e:
+            return jsonify({"error": "status_read_failed", "msg": str(e)}), 500
+    return jsonify({"error": "not_found"}), 404
 
 @analysis_bp.get("/history")
 def history():
