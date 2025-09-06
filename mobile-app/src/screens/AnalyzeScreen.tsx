@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Alert, ActivityIndicator, ScrollView, Animated, TextInput, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme/colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,6 +76,7 @@ function CircularProgress({ size, trackWidth = 4, progressWidth = 7, progress, t
 }
 
 export default function AnalyzeScreen() {
+  const insets = useSafeAreaInsets();
   const [selectedUris, setSelectedUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResponse | null>(null);
@@ -93,6 +95,7 @@ export default function AnalyzeScreen() {
   const [showSavedNotification, setShowSavedNotification] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [editsDirty, setEditsDirty] = useState(false);
 
   const onDownloadPreview = async () => {
     try {
@@ -116,6 +119,31 @@ export default function AnalyzeScreen() {
       Alert.alert('Saved', 'Image saved to Photos.');
     } catch (e: any) {
       Alert.alert('Save failed', e?.message || 'Install expo-file-system and expo-media-library');
+    }
+  };
+
+  const onSaveEditsToLog = () => {
+    try {
+      if (!loggedMealId || !result) return;
+      // Build patch from current UI state
+      const patch: any = {
+        dish: result.dish,
+        ingredients_detected: Array.isArray(result.ingredients_detected) ? result.ingredients_detected : [],
+        items_grams: Array.isArray(result.items_grams) ? result.items_grams : [],
+        items_nutrition: Array.isArray(result.items_nutrition) ? result.items_nutrition : [],
+        total_kcal: totals ? totals.kcal : result.total_kcal,
+        total_protein_g: totals ? totals.protein : result.total_protein_g,
+        total_carbs_g: totals ? totals.carbs : result.total_carbs_g,
+        total_fat_g: totals ? totals.fat : result.total_fat_g,
+        total_grams: totals ? totals.grams : result.total_grams,
+      };
+      mealLogger.updateMeal(loggedMealId, patch);
+      setShowSavedNotification(true);
+      setEditsDirty(false);
+      setTimeout(() => setShowSavedNotification(false), 2000);
+      Alert.alert('Saved', 'Edits saved to Logs.');
+    } catch (e: any) {
+      Alert.alert('Save failed', e?.message || 'Could not save edits');
     }
   };
 
@@ -242,6 +270,7 @@ export default function AnalyzeScreen() {
       setUiItems([]);
       setGrams([]);
       setTotals(null);
+      setEditsDirty(false);
       setGotRecognize(false);
       setGotIngr(false);
       setGotCalories(false);
@@ -295,6 +324,7 @@ export default function AnalyzeScreen() {
           try {
             const logged = mealLogger.logFromAnalysis(finalRes, 'gemini', 'gemini');
             setLoggedMealId(logged.id);
+            setEditsDirty(false);
             setShowSavedNotification(true);
             setTimeout(() => setShowSavedNotification(false), 3000);
           } catch {}
@@ -421,6 +451,8 @@ export default function AnalyzeScreen() {
           <Image source={{ uri: previewUri }} style={{ width: '92%', height: '80%', borderRadius: 12, resizeMode: 'contain' }} />
         </TouchableOpacity>
       ) : null}
+
+      {/* Bottom Save bar will be rendered within content below sections */}
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Removed explicit screen title per request */}
@@ -549,11 +581,34 @@ export default function AnalyzeScreen() {
             </View>
             {gotRecognize ? (
               <>
-                {result?.dish ? <Text style={styles.dishName}>{result.dish}</Text> : null}
+                {typeof result?.dish === 'string' ? (
+                  <TextInput
+                    style={[styles.dishName, { paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0 }]}
+                    value={result!.dish as string}
+                    onChangeText={(txt) => {
+                      setEditsDirty(true);
+                      setResult((prev) => ({ ...(prev || {}), dish: txt }));
+                    }}
+                    placeholder="Dish name"
+                    placeholderTextColor="#aaa"
+                  />
+                ) : null}
                 {Array.isArray(result?.ingredients_detected) && result!.ingredients_detected!.length > 0 ? (
                   <View style={styles.tagsWrap}>
                     {result!.ingredients_detected!.map((tag: string, i: number) => (
-                      <Text key={i} style={styles.tag}>{tag}</Text>
+                      <TextInput
+                        key={i}
+                        style={[styles.tag, { paddingVertical: 2, paddingHorizontal: 8 }]}
+                        value={tag}
+                        onChangeText={(txt) => setResult((prev) => {
+                          setEditsDirty(true);
+                          const next = { ...(prev || {}) } as any;
+                          const arr = Array.isArray(next.ingredients_detected) ? [...next.ingredients_detected] : [];
+                          arr[i] = txt;
+                          next.ingredients_detected = arr;
+                          return next;
+                        })}
+                      />
                     ))}
                   </View>
                 ) : null}
@@ -578,6 +633,7 @@ export default function AnalyzeScreen() {
                 <Text style={styles.sectionTitle}>2. MACROS</Text>
                 <Ionicons name="stats-chart-outline" size={18} color={Colors.neutralText} style={styles.iconAlignUp} />
               </View>
+              {/* Save button moved to bottom sticky bar */}
               {typeof result?.total_grams === 'number' ? (
                 <View style={styles.accentBubble}><Text style={styles.accentBubbleText}>{result!.total_grams} g total</Text></View>
               ) : null}
@@ -694,9 +750,34 @@ export default function AnalyzeScreen() {
                           <TouchableOpacity
                             onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
                             activeOpacity={0.7}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
                           >
-                            <Text style={styles.ingName}>{u.name}</Text>
+                            <TextInput
+                              style={[styles.ingName, { paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0 }]}
+                              value={u.name}
+                              onChangeText={(txt) => {
+                                // update uiItems and underlying result.items_grams name
+                                setEditsDirty(true);
+                                const nextUi = [...uiItems];
+                                nextUi[i] = { ...nextUi[i], name: txt } as any;
+                                setUiItems(nextUi);
+                                setResult((prev) => {
+                                  const r: any = { ...(prev || {}) };
+                                  if (Array.isArray(r.items_grams)) {
+                                    const g = [...r.items_grams];
+                                    if (g[i]) g[i] = { ...g[i], name: txt };
+                                    r.items_grams = g;
+                                  }
+                                  if (Array.isArray(r.items_nutrition)) {
+                                    const n = [...r.items_nutrition];
+                                    const idx = n.findIndex((x: any) => (x.name || '').toLowerCase() === (u.name || '').toLowerCase());
+                                    if (idx >= 0) n[idx] = { ...n[idx], name: txt };
+                                    r.items_nutrition = n;
+                                  }
+                                  return r;
+                                });
+                              }}
+                            />
                             <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color="#d0d0d0" style={{ transform: [{ translateY: 1 }] }} />
                           </TouchableOpacity>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -743,6 +824,7 @@ export default function AnalyzeScreen() {
                                   next[i] = Math.round(val as number);
                                   setGrams(next);
                                   setTotals(computeTotals(uiItems, next));
+                                  setEditsDirty(true);
                                 }}
                               />
                               <TouchableOpacity
@@ -776,9 +858,24 @@ export default function AnalyzeScreen() {
                               <TouchableOpacity
                                 onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
                                 activeOpacity={0.7}
-                                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}
                               >
-                                <Text>{it.name}</Text>
+                                <TextInput
+                                  style={{ color: '#111111', paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0 }}
+                                  value={it.name}
+                                  onChangeText={(txt) => {
+                                    setEditsDirty(true);
+                                    setResult((prev) => {
+                                      const r: any = { ...(prev || {}) };
+                                      if (Array.isArray(r.items_grams)) {
+                                        const g = [...r.items_grams];
+                                        if (g[i]) g[i] = { ...g[i], name: txt };
+                                        r.items_grams = g;
+                                      }
+                                      return r;
+                                    });
+                                  }}
+                                />
                                 <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color="#d0d0d0" style={{ transform: [{ translateY: 1 }] }} />
                               </TouchableOpacity>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -816,6 +913,7 @@ export default function AnalyzeScreen() {
                                       const next = [...grams];
                                       next[i] = Math.round(val as number);
                                       setGrams(next);
+                                      setEditsDirty(true);
                                     }}
                                   />
                                   <TouchableOpacity
@@ -890,6 +988,34 @@ export default function AnalyzeScreen() {
                 </View>
               ) : null}
             </Card>
+          ) : null}
+
+          {/* Bottom in-flow Save button; visible only after analysis began */}
+          {started ? (
+            <View style={{ marginTop: 16, paddingBottom: 16 }}>
+              <TouchableOpacity
+                onPress={() => { if (editsDirty && loggedMealId) onSaveEditsToLog(); }}
+                disabled={!(editsDirty && !!loggedMealId)}
+                activeOpacity={0.8}
+                style={{
+                  backgroundColor: editsDirty && loggedMealId ? '#86efac' : '#e5e7eb',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color={editsDirty && loggedMealId ? '#064e3b' : '#9ca3af'}
+                  style={styles.iconAlignUp}
+                />
+                <Text style={{ color: editsDirty && loggedMealId ? '#064e3b' : '#9ca3af', fontWeight: '700' }}>Save changes</Text>
+              </TouchableOpacity>
+            </View>
           ) : null}
         </View>
       ) : null}
