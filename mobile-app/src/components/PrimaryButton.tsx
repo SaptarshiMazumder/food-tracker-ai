@@ -22,6 +22,7 @@ export default function PrimaryButton({ title, onPress, disabled, style, textSty
       style={[styles.button, style, disabled ? [styles.buttonDisabled, disabledStyle] : undefined]}
     >
       <View style={styles.contentRow}>
+        {/* Always render icon; let disabled color be controlled by provided icon component */}
         {leftIcon ? <View style={styles.iconWrap}>{leftIcon}</View> : null}
         <Text style={[styles.text, textStyle, disabled ? disabledTextStyle : undefined]}>{title}</Text>
       </View>
@@ -50,6 +51,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     marginRight: 6,
+    transform: [{ translateY: 2 }],
   },
   text: {
     color: Colors.text,

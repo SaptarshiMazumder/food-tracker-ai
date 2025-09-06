@@ -92,6 +92,7 @@ export default function AnalyzeScreen() {
   const [loggedMealId, setLoggedMealId] = useState<string | null>(null);
   const [showSavedNotification, setShowSavedNotification] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
 
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
@@ -377,6 +378,22 @@ export default function AnalyzeScreen() {
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Portal-like absolute overlay based on window, not ScrollView */}
+      {previewUri ? (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setPreviewUri(null)}
+          style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#000c', alignItems: 'center', justifyContent: 'center', zIndex: 9999, elevation: 10 }}
+        >
+          <View style={{ position: 'absolute', top: 50, right: 24 }}>
+            <TouchableOpacity onPress={() => setPreviewUri(null)} style={{ backgroundColor: '#0009', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="close" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <Image source={{ uri: previewUri }} style={{ width: '92%', height: '80%', borderRadius: 12, resizeMode: 'contain' }} />
+        </TouchableOpacity>
+      ) : null}
+
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Removed explicit screen title per request */}
       <Text style={styles.subtitle}>Upload or take a photo to extract ingredients and calories.</Text>
@@ -414,27 +431,53 @@ export default function AnalyzeScreen() {
       {selectedUris.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery} contentContainerStyle={{ gap: 8 }}>
           {selectedUris.map((u, i) => (
-            <Image key={i} source={{ uri: u }} style={styles.thumb} />
+            <View key={i}>
+              <TouchableOpacity activeOpacity={0.9} onPress={() => setPreviewUri(u)}>
+                <Image source={{ uri: u }} style={styles.thumb} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (loading) return; // Avoid removing during active upload stream
+                  const next = selectedUris.filter((_, idx) => idx !== i);
+                  setSelectedUris(next);
+                }}
+                style={{ position: 'absolute', top: 2, right: 2, backgroundColor: '#0009', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="close" size={12} color="#fff" />
+              </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
       ) : null}
 
+      {/* image preview overlay moved outside ScrollView */}
+
+      {selectedUris.length > 0 ? (
       <View style={styles.buttonRow}>
         <View style={styles.half}>
           <PrimaryButton
             title={hasAnalyzed && !loading ? "Analyze again" : "Analyze"}
             onPress={onAnalyze}
-            disabled={selectedUris.length === 0 || loading}
+            disabled={loading}
             style={{ backgroundColor: Colors.primary, borderWidth: 0 }}
             textStyle={{ color: '#ffffff' }}
             disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
             disabledTextStyle={{ color: Colors.neutralText }}
-            leftIcon={hasAnalyzed && !loading ? (<Ionicons name="refresh-outline" size={18} color="#ffffff" style={styles.iconAlignUp} />) : undefined}
+            leftIcon={<Ionicons name={hasAnalyzed && !loading ? "refresh-outline" : "play"} size={18} color={loading ? Colors.neutralText : '#ffffff'} style={styles.iconAlignUp} />}
           />
         </View>
         <View style={styles.half}>
-          <PrimaryButton title="Clear" onPress={() => {
-            if (loading) return;
+          <PrimaryButton title={loading ? "Stop" : "Clear"} onPress={() => {
+            if (loading) {
+              // Stop current analysis immediately by resetting streaming state
+              setLoading(false);
+              setStarted(false);
+              setGotRecognize(false);
+              setGotIngr(false);
+              setGotCalories(false);
+              setHealthScoreLoading(false);
+              return;
+            }
             setSelectedUris([]);
             setResult(null);
             setUiItems([]);
@@ -446,14 +489,20 @@ export default function AnalyzeScreen() {
             setGotCalories(false);
             setLoading(false);
             setHasAnalyzed(false);
-          }} disabled={selectedUris.length === 0 || loading}
-            style={{ backgroundColor: '#f2f2f2', borderWidth: 0 }}
+          }} disabled={!loading && selectedUris.length === 0}
+            style={{ backgroundColor: loading ? '#fde68a' : '#f2f2f2', borderWidth: 0 }}
             textStyle={{ color: '#444444' }}
             disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
             disabledTextStyle={{ color: '#999999' }}
+            leftIcon={loading ? (
+              <Ionicons name="close" size={18} color="#444" style={styles.iconAlignUp} />
+            ) : (
+              <Ionicons name="trash-outline" size={18} color={selectedUris.length === 0 ? '#999999' : '#444'} style={styles.iconAlignUp} />
+            )}
           />
         </View>
       </View>
+      ) : null}
 
       {loading ? (
         <View style={{ marginTop: 16 }}>
@@ -492,6 +541,7 @@ export default function AnalyzeScreen() {
               </>
             )}
           </Card>
+          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 8 }} />
 
           {/* 2. MACROS */}
           <Card>
@@ -596,6 +646,7 @@ export default function AnalyzeScreen() {
               </View>
             )}
           </Card>
+          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 8 }} />
 
           {/* 3. INGREDIENTS (combined with adjust portions) */}
           <Card>
@@ -612,15 +663,14 @@ export default function AnalyzeScreen() {
                     uiItems.map((u, i) => (
                       <View key={i} style={{ marginBottom: 12 }}>
                         <View style={styles.rowBetween}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <TouchableOpacity
+                            onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
+                            activeOpacity={0.7}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                          >
                             <Text style={styles.ingName}>{u.name}</Text>
-                            <TouchableOpacity
-                              onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
-                              activeOpacity={0.7}
-                            >
-                              <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color={Colors.neutralText} style={{ transform: [{ translateY: 1 }] }} />
-                            </TouchableOpacity>
-                          </View>
+                            <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color="#d0d0d0" style={{ transform: [{ translateY: 1 }] }} />
+                          </TouchableOpacity>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <TextInput
                               style={styles.gramsInput}
@@ -638,11 +688,6 @@ export default function AnalyzeScreen() {
                             <Text>g</Text>
                           </View>
                         </View>
-                        {/* Always-visible description (note) */}
-                        {u.note ? (
-                          <Text style={styles.noteText}>{u.note}</Text>
-                        ) : null}
-
                         {/* Always visible per-ingredient macros */}
                         <View style={styles.macroRow}>
                           <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{(u.kcalPerG * (grams[i] ?? u.baseGrams)).toFixed(0)}</Text></View>
@@ -652,7 +697,10 @@ export default function AnalyzeScreen() {
                         </View>
                         {expanded[i] ? (
                           <>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            {u.note ? (
+                              <Text style={[styles.noteText, { marginTop: 2 }]}>{u.note}</Text>
+                            ) : null}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
                               <Slider
                                 minimumValue={u.min}
                                 maximumValue={u.max}
@@ -682,7 +730,7 @@ export default function AnalyzeScreen() {
                                 <Text style={styles.resetBtnText}>Reset</Text>
                               </TouchableOpacity>
                             </View>
-                            <Text style={[styles.perGText, { marginTop: 4 }]}>{u.kcalPerG.toFixed(2)} kcal/g</Text>
+                            <Text style={[styles.perGText, { marginTop: 2 }]}>{u.kcalPerG.toFixed(2)} kcal/g</Text>
                           </>
                         ) : null}
                       </View>
@@ -697,15 +745,14 @@ export default function AnalyzeScreen() {
                         return (
                           <View key={i} style={{ marginBottom: 12 }}>
                             <View style={styles.rowBetween}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <TouchableOpacity
+                                onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
+                                activeOpacity={0.7}
+                                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                              >
                                 <Text>{it.name}</Text>
-                                <TouchableOpacity
-                                  onPress={() => setExpanded((e) => ({ ...e, [i]: !e[i] }))}
-                                  activeOpacity={0.7}
-                                >
-                                  <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color={Colors.neutralText} style={{ transform: [{ translateY: 1 }] }} />
-                                </TouchableOpacity>
-                              </View>
+                                <Ionicons name={expanded[i] ? 'chevron-down' : 'chevron-forward'} size={18} color="#d0d0d0" style={{ transform: [{ translateY: 1 }] }} />
+                              </TouchableOpacity>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                 <TextInput
                                   style={styles.gramsInput}
@@ -722,13 +769,12 @@ export default function AnalyzeScreen() {
                                 <Text>g</Text>
                               </View>
                             </View>
-                            {/* Always-visible description (note) prior to calories */}
-                            {it.note ? (
-                              <Text style={styles.noteText}>{it.note}</Text>
-                            ) : null}
                             {expanded[i] ? (
                               <>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                {it.note ? (
+                                  <Text style={[styles.noteText, { marginTop: 2 }]}>{it.note}</Text>
+                                ) : null}
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
                                   <Slider
                                     minimumValue={min}
                                     maximumValue={max}
@@ -796,6 +842,7 @@ export default function AnalyzeScreen() {
               </>
             )}
           </Card>
+          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 8 }} />
 
           
 
