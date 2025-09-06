@@ -91,6 +91,7 @@ export default function AnalyzeScreen() {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [healthScore, setHealthScore] = useState<HealthScoreOutput | null>(null);
   const [healthScoreLoading, setHealthScoreLoading] = useState(false);
+  const [healthExpanded, setHealthExpanded] = useState(false);
   const [loggedMealId, setLoggedMealId] = useState<string | null>(null);
   const [showSavedNotification, setShowSavedNotification] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
@@ -141,7 +142,6 @@ export default function AnalyzeScreen() {
       setShowSavedNotification(true);
       setEditsDirty(false);
       setTimeout(() => setShowSavedNotification(false), 2000);
-      Alert.alert('Saved', 'Edits saved to Logs.');
     } catch (e: any) {
       Alert.alert('Save failed', e?.message || 'Could not save edits');
     }
@@ -711,14 +711,72 @@ export default function AnalyzeScreen() {
                 {/* Removed description under macros per request */}
                 {/* Health Score below macros */}
                 <View style={{ marginTop: 10 }}>
-                  <View style={styles.rowBetween}>
-                    <Text style={styles.tileTitle}>Health Score</Text>
-                    {healthScoreLoading ? (
-                      <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>analyzing…</Text></View>
-                    ) : healthScore ? (
-                      renderHealthStars(healthScore.health_score)
-                    ) : null}
-                  </View>
+                  <TouchableOpacity onPress={() => setHealthExpanded((v) => !v)} activeOpacity={0.7}>
+                    <View style={styles.rowBetween}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={[styles.tileTitle, { fontWeight: '400' }]}>Health Score</Text>
+                        {healthScoreLoading ? (
+                          <View style={styles.neutralBubble}><Text style={styles.neutralBubbleText}>analyzing…</Text></View>
+                        ) : healthScore ? (
+                          renderHealthStars(healthScore.health_score)
+                        ) : null}
+                      </View>
+                      <Ionicons name={healthExpanded ? 'chevron-down' : 'chevron-forward'} size={18} color="#d0d0d0" style={{ transform: [{ translateY: 1 }] }} />
+                    </View>
+                  </TouchableOpacity>
+                  {healthScore && healthExpanded ? (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[styles.tileTitle, { fontWeight: '600', marginBottom: 4 }]}>Overview</Text>
+                      <View style={styles.macroRow}>
+                        {(() => {
+                          const color = getHealthColor(healthScore.health_score);
+                          return (
+                            <View style={[styles.macroPill, { backgroundColor: color, borderColor: color }]}>
+                              <Text style={[styles.macroPillLabel, { fontWeight: '400', color: '#111' }]}>Score </Text>
+                              <Text style={[styles.macroPillValue, { color: '#111', fontWeight: '400' }]}>{healthScore.health_score.toFixed(1)}/10</Text>
+                            </View>
+                          );
+                        })()}
+                      </View>
+
+                      <View style={{ marginTop: 10 }}>
+                        <Text style={[styles.tileTitle, { fontWeight: '600', marginBottom: 6 }]}>Component scores</Text>
+                        <View style={styles.macroRow}>
+                          {Object.entries(healthScore.component_scores || {}).map(([k, v]) => (
+                            <View key={k} style={styles.macroPill}><Text style={[styles.macroPillLabel, { fontWeight: '400', color: '#333' }]}>{k.replace('_',' ')} </Text><Text style={[styles.macroPillValue, { fontWeight: '400', color: '#333' }]}>{(v as number).toFixed(1)}</Text></View>
+                          ))}
+                        </View>
+                      </View>
+
+                      {(healthScore.drivers_positive?.length || 0) + (healthScore.drivers_negative?.length || 0) > 0 ? (
+                        <View style={{ marginTop: 10 }}>
+                          <Text style={[styles.tileTitle, { fontWeight: '600', marginBottom: 6 }]}>Drivers</Text>
+                          {healthScore.drivers_positive?.length ? (
+                            <View style={{ marginBottom: 6 }}>
+                              <Text style={[styles.noteText, { fontWeight: '400' }]}>Positive</Text>
+                              <View style={styles.tagsWrap}>
+                                {healthScore.drivers_positive.map((d, i) => (
+                                  <Text key={`p-${i}`} style={[styles.tag, { backgroundColor: '#e6f6e6', color: '#333' }]}>{d}</Text>
+                                ))}
+                              </View>
+                            </View>
+                          ) : null}
+                          {healthScore.drivers_negative?.length ? (
+                            <View>
+                              <Text style={[styles.noteText, { fontWeight: '400' }]}>Negative</Text>
+                              <View style={styles.tagsWrap}>
+                                {healthScore.drivers_negative.map((d, i) => (
+                                  <Text key={`n-${i}`} style={[styles.tag, { backgroundColor: '#fdeaea', color: '#333' }]}>{d}</Text>
+                                ))}
+                              </View>
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : null}
+
+                      {/* classification and weights removed */}
+                    </View>
+                  ) : null}
                 </View>
               </>
             ) : (
