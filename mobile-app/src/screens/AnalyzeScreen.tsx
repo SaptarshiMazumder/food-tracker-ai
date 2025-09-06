@@ -94,6 +94,31 @@ export default function AnalyzeScreen() {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [previewUri, setPreviewUri] = useState<string | null>(null);
 
+  const onDownloadPreview = async () => {
+    try {
+      if (!previewUri) return;
+      const MediaLibrary: any = await import('expo-media-library');
+      const FileSystem: any = await import('expo-file-system');
+      const perm = await MediaLibrary.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed', 'Allow Photos access to save the image.');
+        return;
+      }
+      let localUri = previewUri;
+      if (!previewUri.startsWith('file://')) {
+        const fname = `food-preview-${Date.now()}.jpg`;
+        const target = FileSystem.cacheDirectory + fname;
+        const dl = await FileSystem.downloadAsync(previewUri, target);
+        localUri = dl.uri;
+      }
+      const asset = await MediaLibrary.createAssetAsync(localUri);
+      try { await MediaLibrary.createAlbumAsync('Food Analyzer', asset, false); } catch {}
+      Alert.alert('Saved', 'Image saved to Photos.');
+    } catch (e: any) {
+      Alert.alert('Save failed', e?.message || 'Install expo-file-system and expo-media-library');
+    }
+  };
+
   // Skeleton components for loading states
   type SkeletonProps = { width?: number | string; height?: number; borderRadius?: number; style?: any };
   const Skeleton = ({ width = '100%', height = 12, borderRadius = 6, style }: SkeletonProps) => {
@@ -385,7 +410,10 @@ export default function AnalyzeScreen() {
           onPress={() => setPreviewUri(null)}
           style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#000c', alignItems: 'center', justifyContent: 'center', zIndex: 9999, elevation: 10 }}
         >
-          <View style={{ position: 'absolute', top: 50, right: 24 }}>
+          <View style={{ position: 'absolute', top: 50, right: 24, gap: 10 }}>
+            <TouchableOpacity onPress={onDownloadPreview} style={{ backgroundColor: '#0009', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="download-outline" size={18} color="#fff" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => setPreviewUri(null)} style={{ backgroundColor: '#0009', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="close" size={18} color="#fff" />
             </TouchableOpacity>
@@ -809,17 +837,7 @@ export default function AnalyzeScreen() {
                       })}
                     </>
                   )}
-                  {totals ? (
-                    <View style={styles.totalsContainer}>
-                      <Text style={styles.totalsTitle}>Adjusted totals</Text>
-                      <View style={styles.macroRow}>
-                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Cals </Text><Text style={styles.macroPillValue}>{totals.kcal}</Text></View>
-                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Protein </Text><Text style={styles.macroPillValue}>{totals.protein} g</Text></View>
-                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Carbs </Text><Text style={styles.macroPillValue}>{totals.carbs} g</Text></View>
-                        <View style={styles.macroPill}><Text style={styles.macroPillLabel}>Fats </Text><Text style={styles.macroPillValue}>{totals.fat} g</Text></View>
-                      </View>
-                    </View>
-                  ) : null}
+                  {/* Removed Adjusted totals section to avoid duplication with MACROS */}
                 </>
               ) : null
             ) : (
