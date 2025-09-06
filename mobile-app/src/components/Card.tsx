@@ -12,18 +12,17 @@ export default function Card({ children, style, flat }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 12,
     marginBottom: 12,
-    // no borders or shadows
-    borderWidth: 0,
-    borderColor: 'transparent',
-    shadowColor: 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
+    borderWidth: 1,
+    borderColor: '#e6f3ea',
+    shadowColor: '#84cc16',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   flat: {
     shadowColor: 'transparent',

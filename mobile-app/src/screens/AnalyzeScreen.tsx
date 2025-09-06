@@ -523,7 +523,7 @@ export default function AnalyzeScreen() {
             textStyle={{ color: '#ffffff' }}
             disabledStyle={{ backgroundColor: Colors.neutralSurface, borderWidth: 0 }}
             disabledTextStyle={{ color: Colors.neutralText }}
-            leftIcon={<Ionicons name={hasAnalyzed && !loading ? "refresh-outline" : "play"} size={18} color={loading ? Colors.neutralText : '#ffffff'} style={styles.iconAlignUp} />}
+            leftIcon={<Ionicons name={hasAnalyzed && !loading ? "refresh-outline" : "play-outline"} size={18} color={loading ? Colors.neutralText : '#ffffff'} style={styles.iconAlignUp} />}
           />
         </View>
         <View style={styles.half}>
@@ -550,9 +550,9 @@ export default function AnalyzeScreen() {
             setLoading(false);
             setHasAnalyzed(false);
           }} disabled={!loading && selectedUris.length === 0}
-            style={{ backgroundColor: loading ? '#fde68a' : '#f2f2f2', borderWidth: 0 }}
-            textStyle={{ color: '#444444' }}
-            disabledStyle={{ backgroundColor: '#e9e9e9', borderWidth: 0 }}
+            style={{ backgroundColor: loading ? '#fde68a' : '#ffffff', borderWidth: loading ? 0 : 1, borderColor: loading ? 'transparent' : Colors.border }}
+            textStyle={{ color: Colors.text }}
+            disabledStyle={{ backgroundColor: '#fafafa', borderWidth: 1, borderColor: Colors.border }}
             disabledTextStyle={{ color: '#999999' }}
             leftIcon={loading ? (
               <Ionicons name="close" size={18} color="#444" style={styles.iconAlignUp} />
@@ -624,7 +624,7 @@ export default function AnalyzeScreen() {
               </>
             )}
           </Card>
-          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 8 }} />
+          
 
           {/* 2. MACROS */}
           <Card>
@@ -788,7 +788,7 @@ export default function AnalyzeScreen() {
               </View>
             )}
           </Card>
-          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 8 }} />
+          
 
           {/* 3. INGREDIENTS (combined with adjust portions) */}
           <Card>
@@ -1016,7 +1016,7 @@ export default function AnalyzeScreen() {
               </>
             )}
           </Card>
-          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 8 }} />
+          
 
           
 
@@ -1056,7 +1056,7 @@ export default function AnalyzeScreen() {
                 disabled={!(editsDirty && !!loggedMealId)}
                 activeOpacity={0.8}
                 style={{
-                  backgroundColor: editsDirty && loggedMealId ? '#86efac' : '#e5e7eb',
+                  backgroundColor: editsDirty && loggedMealId ? Colors.primary : '#e5e7eb',
                   paddingVertical: 12,
                   borderRadius: 12,
                   alignItems: 'center',
@@ -1068,10 +1068,10 @@ export default function AnalyzeScreen() {
                 <Ionicons
                   name="document-text-outline"
                   size={18}
-                  color={editsDirty && loggedMealId ? '#064e3b' : '#9ca3af'}
+                  color={editsDirty && loggedMealId ? '#1a2e05' : '#9ca3af'}
                   style={styles.iconAlignUp}
                 />
-                <Text style={{ color: editsDirty && loggedMealId ? '#064e3b' : '#9ca3af', fontWeight: '700' }}>Save changes</Text>
+                <Text style={{ color: editsDirty && loggedMealId ? '#1a2e05' : '#9ca3af', fontWeight: '700' }}>Save changes</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -1091,10 +1091,10 @@ export default function AnalyzeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   content: {
-    padding: 16,
+    padding: 12,
     paddingBottom: 32,
   },
   title: {
@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    color: '#666',
+    color: Colors.neutralText,
   },
   actions: {
     marginTop: 16,
@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 280,
     borderRadius: 12,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: Colors.neutralSurface,
   },
   gallery: {
     marginTop: 16,
@@ -1126,7 +1126,14 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: Colors.neutralSurface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 0,
   },
   result: {
     marginTop: 16,
@@ -1136,30 +1143,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#eee',
-    // subtle, centered, blurred shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 50,
-    elevation: 2,
+    borderColor: Colors.border,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 1,
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#666',
+    color: Colors.neutralText,
     letterSpacing: 1,
   },
   dishName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.text,
   },
   badge: {
     marginTop: 4,
@@ -1181,7 +1187,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    color: Colors.accentText,
+    color: '#333',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   accentBubble: {
     backgroundColor: Colors.accentSurface,
@@ -1191,7 +1199,7 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -3 }],
   },
   accentBubbleText: {
-    color: Colors.accentText,
+    color: '#333',
     fontWeight: '400',
   },
   toast: {
@@ -1199,7 +1207,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    backgroundColor: '#22c55e',
+    backgroundColor: Colors.primary,
     borderWidth: 0,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1207,11 +1215,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 0,
   },
   toastText: {
     color: '#ffffff',
@@ -1274,14 +1282,19 @@ const styles = StyleSheet.create({
   },
   tile: {
     width: '48%',
-    backgroundColor: '#fafafa',
-    borderRadius: 10,
-    padding: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: Colors.border,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 0,
   },
   tileTitle: {
-    color: '#666',
+    color: Colors.neutralText,
     marginBottom: 4,
   },
   tileValue: {
@@ -1300,7 +1313,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   noteText: {
-    color: '#666',
+    color: Colors.neutralText,
     fontSize: 12,
     marginBottom: 4,
   },
@@ -1310,14 +1323,14 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#888',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    color: '#333',
+    borderColor: Colors.border,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    color: Colors.text,
     fontSize: 13,
   },
   macroStrip: {
-    color: '#666',
+    color: Colors.neutralText,
   },
   macroRow: {
     flexDirection: 'row',
@@ -1347,27 +1360,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   perGText: {
-    color: '#666',
+    color: Colors.neutralText,
     fontSize: 12,
     marginTop: 4,
   },
   ingName: {
-    color: '#111111',
+    color: Colors.text,
     fontWeight: '400',
   },
   timingLabel: {
-    color: '#666',
+    color: Colors.neutralText,
   },
   timingValue: {
-    color: '#333',
+    color: Colors.text,
     fontWeight: '500',
   },
   timingLabelBold: {
-    color: '#444',
+    color: Colors.text,
     fontWeight: '600',
   },
   timingValueBold: {
-    color: '#111',
+    color: Colors.text,
     fontWeight: '700',
   },
   resetBtn: {
@@ -1375,13 +1388,13 @@ const styles = StyleSheet.create({
     height: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    borderRadius: 999,
+    backgroundColor: '#ffffff',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#777',
+    borderColor: Colors.border,
   },
   resetBtnText: {
-    color: '#333',
+    color: Colors.text,
     fontWeight: '500',
     fontSize: 12,
   },

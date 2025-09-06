@@ -32,17 +32,22 @@ export default function PrimaryButton({ title, onPress, disabled, style, textSty
 
 const styles = StyleSheet.create({
   button: {
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.text,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: Colors.primary,
+    borderWidth: 0,
+    borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 18,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 0,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   contentRow: {
     flexDirection: 'row',
@@ -50,12 +55,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrap: {
-    marginRight: 6,
+    marginRight: 8,
     transform: [{ translateY: 2 }],
   },
   text: {
-    color: Colors.text,
-    fontWeight: '600',
+    color: '#ffffff',
+    fontWeight: '700',
   },
 });
 

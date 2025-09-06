@@ -13,7 +13,7 @@ export default function RagScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>RAG Query</Text>
+      {/* Removed page header for a cleaner look */}
       <TextInput
         placeholder="Ask about recipes, ingredients, nutrition..."
         value={query}
@@ -35,9 +35,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 8,
+    
   },
   input: {
     borderWidth: 1,

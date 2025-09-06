@@ -1,25 +1,25 @@
 export const Colors = {
   // Core theme
-  primary: '#ff7a00',
+  primary: '#84cc16',
   background: '#ffffff',
-  text: '#222222',
+  text: '#1f2937',
   card: '#ffffff',
-  border: '#e5e5e5',
+  border: '#e6f3ea',
 
   // Accents and neutrals
-  accentSurface: '#ffedd9',
-  accentText: '#111111',
-  neutralSurface: '#f1f1f1',
-  neutralText: '#444444',
+  accentSurface: '#ecfccb',
+  accentText: '#3a3a3a',
+  neutralSurface: '#f4f7f5',
+  neutralText: '#5b7164',
 
   // Controls
-  sliderActive: '#ff7a00',
-  sliderInactive: '#dddddd',
+  sliderActive: '#84cc16',
+  sliderInactive: '#d9e8de',
 
   // Macro rings
-  macroProtein: '#3b82f6',
-  macroCarbs: '#ef4444',
-  macroFat: '#facc15',
+  macroProtein: '#93c5fd',
+  macroCarbs: '#f9a8d4',
+  macroFat: '#fde68a',
 };
 
 

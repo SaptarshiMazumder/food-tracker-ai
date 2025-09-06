@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from './src/screens/HomeScreen';
 import AnalyzeScreen from './src/screens/AnalyzeScreen';
@@ -29,13 +29,14 @@ export default function App() {
   return (
     <NavigationContainer theme={appTheme}>
       <StatusBar style="dark" />
-      <Tab.Navigator screenOptions={{ headerShown: true, tabBarActiveTintColor: appTheme.colors.primary, tabBarInactiveTintColor: '#999999' }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: appTheme.colors.primary, tabBarInactiveTintColor: '#999999' }}>
         <Tab.Screen
           name="Home"
           component={HomeScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="home" size={size} color={color} />
+              <Ionicons name="home-outline" size={size} color={color} />
             ),
           }}
         />
@@ -44,7 +45,7 @@ export default function App() {
           component={AnalyzeScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="analytics" size={size} color={color} />
+              <Ionicons name="analytics-outline" size={size} color={color} />
             ),
           }}
         />
@@ -53,7 +54,7 @@ export default function App() {
           component={LogScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="calendar-today" size={size} color={color} />
+              <Ionicons name="calendar-outline" size={size} color={color} />
             ),
           }}
         />
@@ -62,11 +63,12 @@ export default function App() {
           component={RagScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="search" size={size} color={color} />
+              <Ionicons name="search-outline" size={size} color={color} />
             ),
           }}
         />
-      </Tab.Navigator>
+        </Tab.Navigator>
+      </SafeAreaView>
     </NavigationContainer>
   );
 }

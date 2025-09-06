@@ -233,24 +233,22 @@ export default function LogScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Meal Log</Text>
-        <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={goToday}>
-          <Text style={styles.btnTextPrimary}>Today</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Header removed; keep Today action integrated into calendar header */}
 
       {/* Weekly Calendar */}
       <View style={styles.calendar}>
         <View style={styles.calendarHeader}>
           <TouchableOpacity style={styles.navBtn} onPress={previousWeek}>
-            <MaterialIcons name="chevron-left" size={20} color="#fff" />
+            <Ionicons name="chevron-back-outline" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.calendarMonth}>
             {currentWeekStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
           </Text>
           <TouchableOpacity style={styles.navBtn} onPress={nextWeek}>
-            <MaterialIcons name="chevron-right" size={20} color="#fff" />
+            <Ionicons name="chevron-forward-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navBtn, { width: 52, borderRadius: 26 }]} onPress={goToday}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Today</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.calendarGrid}>
@@ -619,8 +617,8 @@ export default function LogScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  headerTitle: { fontSize: 22, fontWeight: '600' },
+  header: { },
+  headerTitle: { },
   btn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: '#ddd' },
   btnPrimary: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   btnSearch: { backgroundColor: Colors.primary, borderColor: Colors.primary },
